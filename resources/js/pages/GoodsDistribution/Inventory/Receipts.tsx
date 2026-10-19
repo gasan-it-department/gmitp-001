@@ -64,7 +64,7 @@ export default function Receipts({ records, filters, canManage, program, options
                     </div>
                 }
             >
-                <table className="w-full table-fixed text-left text-sm">
+                <table className="block w-full table-fixed text-left text-sm @min-[960px]/goods:table">
                     <caption className="sr-only">Stock receipts and their receiving status</caption>
                     <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[960px]/goods:table-header-group">
                         <tr>
@@ -75,11 +75,11 @@ export default function Receipts({ records, filters, canManage, program, options
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block @min-[960px]/goods:table-row-group">
+                    <tbody className="grid gap-3 bg-[#f8faf9] px-3 py-3 empty:p-0 @min-[960px]/goods:table-row-group @min-[960px]/goods:bg-transparent @min-[960px]/goods:p-0">
                         {records.data.map((receipt) => (
                             <tr
                                 key={receipt.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row"
+                                className="grid grid-cols-2 rounded-md border border-[#dfe6e1] bg-white hover:bg-[#fafcfb] @min-[960px]/goods:table-row @min-[960px]/goods:rounded-none @min-[960px]/goods:border-0 @min-[960px]/goods:border-b @min-[960px]/goods:border-[#e8ede9] @min-[960px]/goods:last:border-b-0"
                             >
                                 <td className="col-span-2 min-w-0 px-5 py-4 [overflow-wrap:anywhere] @min-[960px]/goods:col-span-1">
                                     <Link

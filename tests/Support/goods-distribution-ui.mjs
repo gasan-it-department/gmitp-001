@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import puppeteer from 'puppeteer';
-import { closeGoodsFixture, inspectGoodsPages } from './goods-responsive-checks.mjs';
+import { assertGoodsLayout, closeGoodsFixture, inspectGoodsPages } from './goods-responsive-checks.mjs';
 
 // Production assets and synthetic records only; no application database is accessed.
 const root = process.cwd();
@@ -137,6 +137,7 @@ let rejectCooldownLookup = false;
 let programCooldown = { cooldown_enabled: false, cooldown_scope: 'household', cooldown_duration: null, cooldown_unit: null };
 const registryHousehold = { id: 'household', household_code: 'HH-GD-1', head_name: 'Kenneth Solis', street: 'Main street', barangay: 'Uno' };
 let registrationDraft = null;
+let listRecords;
 let registrationError = null;
 let rejectRegistration = false;
 function pageFor(url) {
@@ -313,7 +314,7 @@ function pageFor(url) {
         });
     } else
         Object.assign(props, {
-            records: pageData([{ ...record, snapshot: { ...snapshot, subject: { ...person, name: 'LongRecipientName'.repeat(9) } } }]),
+            records: pageData(listRecords ?? [{ ...record, snapshot: { ...snapshot, subject: { ...person, name: 'LongRecipientName'.repeat(9) } } }]),
         });
     return { component, props, url: url.pathname + url.search, version: 'fixture', clearHistory: false, encryptHistory: false };
 }
@@ -532,7 +533,46 @@ try {
         }, label);
         await page.keyboard.type(value);
     };
-    if (process.argv.includes('--responsive-only')) {
+    if (process.argv.includes('--list-cards-only')) {
+        listRecords = [record, { ...record, id: 'second-request', reference: 'GD-2026-000002', status: 'under_review',
+            program_name: 'MDRRMO Emergency Relief and Community Food Distribution', assisted_household_member_id: 'member',
+            snapshot: { ...snapshot, subject: { ...snapshot.roster[1], name: 'LongRecipientName'.repeat(9) } } },
+        { ...record, id: 'third-request', reference: 'GD-2026-000003', status: 'released',
+            handover_snapshot: { ...snapshot, subject: { ...person, name: 'Historical recipient name' } } }];
+        for (const width of [320, 390, 768, 1024, 1440]) {
+            await page.setViewport({ width, height: 960 });
+            await go('/distribution');
+            await assertGoodsLayout(page, `${width}px distribution list cards`);
+            const layout = await page.evaluate(() => {
+                const body = document.querySelector('.goods-request-list > tbody');
+                const rows = [...body.children];
+                return {
+                    width: body.closest('[class*="@container/goods"]').clientWidth,
+                    display: getComputedStyle(body).display,
+                    separation: rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom,
+                    cards: rows.map((row) => ({ border: getComputedStyle(row).borderTopWidth, radius: parseFloat(getComputedStyle(row).borderRadius), shadow: getComputedStyle(row).boxShadow })),
+                };
+            });
+            if (layout.width < 800) {
+                assert.equal(layout.display, 'grid');
+                assert.ok(layout.separation >= 11 && layout.separation <= 13);
+                assert.ok(layout.cards.every((card) => card.border === '1px' && card.radius > 0 && card.radius <= 8 && card.shadow === 'none'));
+            } else {
+                assert.equal(layout.display, 'table-row-group');
+                assert.ok(layout.cards.every((card) => card.radius === 0));
+            }
+            assert.ok(await page.$('.goods-request-list a[href$="/household-members/member"]'));
+            assert.ok(await page.$('.goods-request-list a[href$="/recipients/person"]'));
+            assert.ok(await page.evaluate(() => document.body.textContent.includes('Historical recipient name')));
+            await page.screenshot({ path: path.join(output, `distribution-list-cards-${width}.png`), fullPage: true });
+        }
+        listRecords = [];
+        await page.setViewport({ width: 390, height: 960 });
+        await go('/distribution');
+        assert.ok(await page.evaluate(() => document.body.textContent.includes('No distribution requests found.')));
+        assert.deepEqual(errors, []);
+        console.log('PASS: distribution card gaps/borders, desktop table, long names, recipient/filer links, handover snapshots and empty state at 320/390/768/1024/1440px.');
+    } else if (process.argv.includes('--responsive-only')) {
         await inspectGoodsPages(page, go, [
             '', '?beneficiary_id=person&long_name=1', '/distribution', '/distribution/create',
             '/distribution/request', '/distribution/request?tab=household&status=pending',
