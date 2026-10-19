@@ -428,7 +428,9 @@ try {
     }
     for (const width of detailOnly || receivingOnly || programEditOnly
         ? []
-        : programsOnly || inventoryOnly || receiptsOnly || catalogOnly
+        : programsOnly || receiptsOnly || catalogOnly
+          ? [1440, 1024, 768, 390, 320]
+        : inventoryOnly
           ? [1440, 1024, 768, 390]
           : [1440, 390]) {
         await page.setViewport({ width, height: 1000 });
@@ -453,20 +455,53 @@ try {
                     ]) {
             await go(suffix);
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Overflow: ${width} ${suffix}`);
+            if (receiptsOnly && suffix.includes('search=missing'))
+                assert.ok(await page.evaluate(() => document.body.textContent.includes('No stock receipts found.')));
+            if (receiptsOnly && suffix.includes('status=posted')) {
+                assert.equal(await page.$$eval('table tbody > tr', (rows) => rows.length), 1);
+                assert.ok(await page.$eval('table tbody', (body) => body.textContent.toLowerCase().includes('posted')));
+            }
+            if (receiptsOnly && suffix.includes('view_only=1'))
+                assert.equal(await page.$('a[href$="/stock-receipts/create"]'), null);
+            if (catalogOnly && suffix === '/items?search=missing')
+                assert.ok(await page.evaluate(() => document.body.textContent.includes('No items found.')));
+            if (catalogOnly && suffix === '/items?view_only=1')
+                assert.equal(await page.$$eval('button', (buttons) => buttons.filter((button) => button.textContent.includes('Add item') || button.getAttribute('aria-label')?.startsWith('Edit ')).length), 0);
             if (suffix === '/programs/program-a')
                 await page.screenshot({ path: path.join(root, `storage/app/goods-program-${width}.png`), fullPage: true });
             if (suffix === '/programs/program-a?tab=items')
                 await page.screenshot({ path: path.join(root, `storage/app/goods-program-items-${width}.png`), fullPage: true });
             if (suffix === '/programs/program-a?tab=items')
                 await page.screenshot({ path: path.join(root, `storage/app/goods-program-items-viewport-${width}.png`) });
-            if (suffix === '/programs')
-                await page.screenshot({ path: path.join(root, `storage/app/goods-programs-directory-${width}.png`), fullPage: true });
+            if (suffix === '/programs' || suffix === '/stock-receipts' || suffix === '/items' || suffix === '/settings' || suffix === '/settings?kind=locations') {
+                if (programsOnly || receiptsOnly || catalogOnly) {
+                    const layout = await page.evaluate(() => {
+                        const body = document.querySelector('table tbody');
+                        const rows = [...body.children];
+                        return {
+                            containerWidth: body.closest('[class*="@container/goods"]').clientWidth,
+                            display: getComputedStyle(body).display,
+                            gap: parseFloat(getComputedStyle(body).rowGap),
+                            separation: rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom,
+                            cards: rows.map((row) => ({ border: getComputedStyle(row).borderTopWidth, radius: parseFloat(getComputedStyle(row).borderRadius), shadow: getComputedStyle(row).boxShadow })),
+                        };
+                    });
+                    if (layout.containerWidth < 960) {
+                        assert.equal(layout.display, 'grid');
+                        assert.equal(layout.gap, 12);
+                        assert.ok(layout.separation >= 11 && layout.separation <= 13);
+                        assert.ok(layout.cards.every((card) => card.border === '1px' && card.radius > 0 && card.radius <= 8 && card.shadow === 'none'));
+                    } else {
+                        assert.equal(layout.display, 'table-row-group');
+                        assert.ok(layout.cards.every((card) => card.radius === 0));
+                    }
+                }
+                const directoryName = suffix.startsWith('/settings') ? `settings-${suffix.includes('kind=locations') ? 'locations' : 'sources'}`
+                    : suffix === '/stock-receipts' ? 'receipts' : suffix.slice(1);
+                await page.screenshot({ path: path.join(root, `storage/app/goods-${directoryName}-directory-${width}.png`), fullPage: true });
+            }
             if (suffix === '/inventory')
                 await page.screenshot({ path: path.join(root, `storage/app/goods-inventory-directory-${width}.png`), fullPage: true });
-            if (suffix === '/stock-receipts')
-                await page.screenshot({ path: path.join(root, `storage/app/goods-receipts-directory-${width}.png`), fullPage: true });
-            if (catalogOnly && (suffix === '/items' || suffix === '/settings'))
-                await page.screenshot({ path: path.join(root, `storage/app/goods-${suffix.slice(1)}-directory-${width}.png`), fullPage: true });
             if (suffix.endsWith('view_only=1'))
                 assert.equal(
                     await page.$$eval('main button', (buttons) => buttons.filter((el) => el.textContent.trim() === 'Add program').length),
@@ -643,6 +678,12 @@ try {
         await go('/settings');
         await clickText('Add source');
         await page.waitForSelector('[role="dialog"]');
+        await clickText('Cancel');
+        await page.waitForFunction(() => !document.querySelector('[role="dialog"]'));
+        await go('/settings?kind=locations');
+        await clickText('Add location');
+        await page.waitForSelector('[role="dialog"]');
+        assert.ok(await page.$eval('[role="dialog"]', (dialog) => dialog.textContent.includes('Add storage location')));
         await clickText('Cancel');
         await page.waitForFunction(() => !document.querySelector('[role="dialog"]'));
         await go('/items');
