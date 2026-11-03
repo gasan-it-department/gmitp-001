@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import goodsDistribution from '@/routes/goodsDistribution';
 import { Link, router } from '@inertiajs/react';
 import { Check, ChevronRight, ClipboardCheck, HandHeart, Pencil, RefreshCw, RotateCcw, Send, X } from 'lucide-react';
 import { useState } from 'react';
+import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import { Errors, Field, inputClass, quantity, StateBadge, useInventoryContext, useInventoryMutation } from '../Inventory/components';
 import { DirectoryLayout, DirectoryPanel } from '../Inventory/DirectoryLayout';
 import { RequestPersonLink } from '../RecipientProfileLinks';
@@ -14,6 +14,7 @@ import { CooldownNotice, useCooldownContext } from './Cooldown';
 import DocumentChecklist from './DocumentReview';
 import HistoryChanges from './HistoryChanges';
 import HouseholdSyncDialog from './HouseholdSyncDialog';
+import { distributionProgramReturn, type ProgramContext } from './programContext';
 import type { GoodsRequest, History, HouseholdSyncPreview, Permissions, RequirementsUpdate } from './types';
 
 type Command = 'submit' | 'review' | 'return' | 'resubmit' | 'approve' | 'cancel' | 'release' | 'authorize_cooldown';
@@ -26,6 +27,7 @@ export default function Details({
     filters,
     householdSync,
     requirementsUpdate = null,
+    programContext = null,
 }: {
     request: GoodsRequest;
     permissions: Permissions;
@@ -35,6 +37,7 @@ export default function Details({
     filters: Record<string, string>;
     householdSync: HouseholdSyncPreview | null;
     requirementsUpdate?: RequirementsUpdate | null;
+    programContext?: ProgramContext | null;
 }) {
     const { slug } = useInventoryContext();
     const routes = goodsDistribution.requests;
@@ -130,14 +133,14 @@ export default function Details({
     };
     return (
         <DirectoryLayout
-            rootHref={routes.index.url({ municipality: slug })}
+            rootHref={programContext ? distributionProgramReturn(slug, programContext) : routes.index.url({ municipality: slug })}
             title={r.reference}
             actions={
                 <div className="flex flex-wrap gap-2">
                     {((permissions.intake && ['draft', 'pending', 'returned'].includes(r.status)) ||
                         (permissions.process && r.status === 'draft')) && (
                         <Button variant="outline" asChild>
-                            <Link href={routes.edit.url({ municipality: slug, requestId: r.id })}>
+                            <Link href={routes.edit.url({ municipality: slug, requestId: r.id }, { query: programContext ?? undefined })}>
                                 <Pencil className="size-4" />
                                 {r.status === 'draft' ? 'Complete draft' : 'Edit'}
                             </Link>
@@ -197,6 +200,11 @@ export default function Details({
                 </div>
             }
         >
+            {programContext && (
+                <Link href={distributionProgramReturn(slug, programContext)} className="text-sm font-medium text-[#245e4f] hover:underline">
+                    Back to program distributions
+                </Link>
+            )}
             {returnProfile && (
                 <Link href={returnProfile} className="text-sm font-medium text-[#245e4f] hover:underline">
                     Back to goods profile
@@ -281,7 +289,11 @@ export default function Details({
             <Tabs
                 value={tab}
                 onValueChange={(value) =>
-                    router.get(routes.show.url({ municipality: slug, requestId: r.id }), { ...profileContext, tab: value }, { preserveScroll: true })
+                    router.get(
+                        routes.show.url({ municipality: slug, requestId: r.id }),
+                        { ...profileContext, ...programContext, tab: value },
+                        { preserveScroll: true },
+                    )
                 }
             >
                 <TabsList className="max-w-full bg-[#eaf1ed]">

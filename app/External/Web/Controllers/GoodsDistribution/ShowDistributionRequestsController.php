@@ -27,6 +27,7 @@ final class ShowDistributionRequestsController extends Controller
         $municipalId = app('municipal_id');
         if ($screen === 'detail') {
             $record = $read->detail($municipalId, $request->route('requestId'));
+            $common['programContext'] = $this->programContext($request, $municipalId, $record->program_id);
             $history = $read->history($record);
 
             return Inertia::render('GoodsDistribution/Distribution/Details', [...$common,
@@ -43,6 +44,7 @@ final class ShowDistributionRequestsController extends Controller
         }
         if ($screen === 'create' || $screen === 'edit') {
             $record = $screen === 'edit' ? $read->detail($municipalId, $request->route('requestId')) : null;
+            $common['programContext'] = $this->programContext($request, $municipalId, $record?->program_id ?? $request->validated('program_id'));
             if ($record && ! in_array($record->status->value, ['draft', 'pending', 'returned'], true)) {
                 abort(409, 'Return this request before editing.');
             }
@@ -59,5 +61,17 @@ final class ShowDistributionRequestsController extends Controller
 
         return Inertia::render('GoodsDistribution/Distribution/Index', [...$common, 'options' => $read->options($municipalId),
             'records' => DistributionRequestResource::collection($read->listing($municipalId, $request->validated()))->response()->getData(true)]);
+    }
+
+    private function programContext(DistributionPageRequest $request, string $municipalId, ?string $programId): ?array
+    {
+        $id = $request->validated('program_context_id');
+        if (! $id || $id !== $programId || ! $request->user()->can('goods_distribution.inventory.view')
+            || ! \App\Core\GoodsDistribution\Models\Program::query()->where('municipal_id', $municipalId)->whereKey($id)->exists()) {
+            return null;
+        }
+
+        return collect($request->safe()->only(['program_context_id', 'program_search', 'program_status', 'program_from', 'program_to', 'program_page']))
+            ->filter(fn ($value) => $value !== null && $value !== '')->map(fn ($value) => (string) $value)->all();
     }
 }

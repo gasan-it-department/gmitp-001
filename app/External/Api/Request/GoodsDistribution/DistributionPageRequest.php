@@ -16,6 +16,12 @@ final class DistributionPageRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'program_context_id' => ['nullable', 'ulid'],
+            'program_search' => ['nullable', 'string', 'max:100'],
+            'program_status' => ['nullable', Rule::enum(DistributionStatus::class)],
+            'program_from' => ['nullable', 'date_format:Y-m-d'],
+            'program_to' => array_filter(['nullable', 'date_format:Y-m-d', $this->filled('program_from') ? 'after_or_equal:program_from' : null]),
+            'program_page' => ['nullable', 'integer', 'min:1'],
             'search' => ['nullable', 'string', 'max:100'], 'program_id' => ['nullable', 'ulid'],
             'beneficiary_id' => ['nullable', 'ulid'], 'household_id' => ['nullable', 'ulid'], 'status' => ['nullable', Rule::enum(DistributionStatus::class)],
             'from' => ['nullable', 'date_format:Y-m-d'], 'to' => array_filter(['nullable', 'date_format:Y-m-d', $this->filled('from') ? 'after_or_equal:from' : null]),

@@ -9,6 +9,7 @@ import { Errors, Field, inputClass, useInventoryContext, useInventoryMutation } 
 import { DirectoryLayout } from '../Inventory/DirectoryLayout';
 import ItemPicker from '../Inventory/ItemPicker';
 import { CooldownNotice, useCooldownContext } from './Cooldown';
+import { distributionProgramReturn, type ProgramContext } from './programContext';
 import type { CatalogRecord, GoodsRequest, Options, Permissions, Recipient } from './types';
 
 export default function Form({
@@ -18,6 +19,7 @@ export default function Form({
     filters,
     canRegister,
     permissions,
+    programContext = null,
 }: {
     request: GoodsRequest | null;
     options: Options;
@@ -25,6 +27,7 @@ export default function Form({
     filters: Record<string, string>;
     canRegister: boolean;
     permissions: Permissions;
+    programContext?: ProgramContext | null;
 }) {
     const { slug } = useInventoryContext();
     const routes = goodsDistribution.requests;
@@ -35,6 +38,8 @@ export default function Form({
     const [searching, setSearching] = useState(false);
     const [lookupError, setLookupError] = useState('');
     const [program, setProgram] = useState(request?.program_id ?? filters.program_id ?? '');
+    const [returnContext, setReturnContext] = useState(programContext);
+    const backUrl = returnContext ? distributionProgramReturn(slug, returnContext) : routes.index.url({ municipality: slug });
     const [location, setLocation] = useState(request?.storage_location_id ?? '');
     const [subject, setSubject] = useState(request?.assisted_household_member_id ?? '');
     const cooldown = useCooldownContext({ programId: program, beneficiaryId: recipient?.id, memberId: subject });
@@ -69,11 +74,15 @@ export default function Form({
     };
     return (
         <DirectoryLayout
-            rootHref={routes.index.url({ municipality: slug })}
+            rootHref={backUrl}
             title={request?.status === 'draft' ? 'Complete distribution draft' : request ? 'Edit distribution request' : 'New distribution request'}
             actions={
                 <Button variant="outline" asChild>
-                    <Link href={request ? routes.show.url({ municipality: slug, requestId: request.id }) : routes.index.url({ municipality: slug })}>
+                    <Link
+                        href={
+                            request ? routes.show.url({ municipality: slug, requestId: request.id }, { query: returnContext ?? undefined }) : backUrl
+                        }
+                    >
                         Cancel
                     </Link>
                 </Button>
@@ -165,7 +174,7 @@ export default function Form({
                         },
                         request ? 'patch' : 'post',
                     );
-                    if (result) router.visit(routes.show.url({ municipality: slug, requestId: result.id }));
+                    if (result) router.visit(routes.show.url({ municipality: slug, requestId: result.id }, { query: returnContext ?? undefined }));
                 }}
             >
                 <div className="grid gap-4 @min-[800px]/goods:grid-cols-3">
@@ -198,6 +207,7 @@ export default function Form({
                             value={program}
                             onChange={(e) => {
                                 setProgram(e.target.value);
+                                setReturnContext(null);
                                 setLines([{ key: crypto.randomUUID(), item: null, quantity: '' }]);
                             }}
                         >
@@ -234,7 +244,10 @@ export default function Form({
                         </Button>
                     </header>
                     {lines.map((line, index) => (
-                        <div className="grid grid-cols-[minmax(0,1fr)_44px] items-end gap-3 [&>label:first-child]:col-span-2 @min-[560px]/goods:grid-cols-[minmax(0,1fr)_160px_44px] @min-[560px]/goods:[&>label:first-child]:col-span-1" key={line.key}>
+                        <div
+                            className="grid grid-cols-[minmax(0,1fr)_44px] items-end gap-3 @min-[560px]/goods:grid-cols-[minmax(0,1fr)_160px_44px] [&>label:first-child]:col-span-2 @min-[560px]/goods:[&>label:first-child]:col-span-1"
+                            key={line.key}
+                        >
                             <Field label={`Item ${index + 1}`}>
                                 {program ? (
                                     <ItemPicker

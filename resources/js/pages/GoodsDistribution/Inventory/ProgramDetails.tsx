@@ -3,7 +3,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import goodsDistribution from '@/routes/goodsDistribution';
 import { Link, router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import type { BulkDispatch } from '../BulkDispatch/types';
+import { distributionProgramContext } from '../Distribution/programContext';
+import RequestList from '../Distribution/RequestList';
+import type { GoodsRequest } from '../Distribution/types';
 import { Filters, programUrl, quantity, ReceiptPrograms, StateBadge, useInventoryContext, withProgram } from './components';
 import { DirectoryLayout, DirectoryPagination, DirectoryPanel, DirectoryStatus } from './DirectoryLayout';
 import ProgramCooldown from './ProgramCooldown';
@@ -12,6 +16,7 @@ import ProgramItems from './ProgramItems';
 import type { CommonProps, InventoryItem, Movement, Options, PageData, Program, ProgramItemRecord, Receipt } from './types';
 
 type ProgramRecords =
+    | { tab: 'distributions'; records: PageData<GoodsRequest> }
     | { tab: 'cooldown' }
     | { tab: 'documents'; documentSettings: DocumentSettings }
     | { tab: 'items'; records: PageData<ProgramItemRecord> }
@@ -29,18 +34,39 @@ export default function ProgramDetails(props: ProgramDetailsProps) {
     const { program, tab, filters, options, canManage } = props;
     const { slug } = useInventoryContext();
     const url = programUrl(slug, program.id);
+    const tabList = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const list = tabList.current;
+        const active = list?.querySelector<HTMLElement>('[data-state="active"]');
+        if (!list || !active) return;
+        const bounds = list.getBoundingClientRect();
+        const selected = active.getBoundingClientRect();
+        if (selected.right > bounds.right) list.scrollLeft += selected.right - bounds.right + 4;
+        else if (selected.left < bounds.left) list.scrollLeft -= bounds.left - selected.left + 4;
+    }, [tab]);
     const itemUrl = (id: string) => withProgram(goodsDistribution.inventory.item.url({ municipality: slug, itemId: id }), program.id);
     const receiptUrl = (id: string) => withProgram(goodsDistribution.inventory.receipts.show.url({ municipality: slug, receiptId: id }), program.id);
     const cell = 'min-w-0 px-5 py-4 [overflow-wrap:anywhere]';
-    const row = 'grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] py-2 @min-[800px]/goods:table-row @min-[800px]/goods:py-0';
+    const row =
+        'grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] py-2 @min-[800px]/goods:table-row @min-[800px]/goods:py-0';
     return (
         <DirectoryLayout
             title={program.name}
             actions={
                 <div className="flex flex-wrap gap-2">
-                    {props.canIntakeDistribution && program.is_active && (
+                    {props.canViewDistribution && props.canIntakeDistribution && program.is_active && (
                         <Button variant="outline" asChild>
-                            <Link href={`${goodsDistribution.requests.create.url({ municipality: slug })}?program_id=${program.id}`}>
+                            <Link
+                                href={goodsDistribution.requests.create.url(
+                                    { municipality: slug },
+                                    {
+                                        query: {
+                                            program_id: program.id,
+                                            ...distributionProgramContext(program.id, tab === 'distributions' ? filters : {}),
+                                        },
+                                    },
+                                )}
+                            >
                                 <Plus className="size-4" />
                                 New distribution
                             </Link>
@@ -71,15 +97,28 @@ export default function ProgramDetails(props: ProgramDetailsProps) {
                 {program.description && <p className="w-full max-w-3xl break-words text-muted-foreground">{program.description}</p>}
             </div>
             <Tabs value={tab} onValueChange={(value) => router.get(url, { tab: value }, { preserveScroll: true })}>
-                <TabsList className="h-auto max-w-full flex-wrap justify-start bg-[#eaf1ed] shadow-none">
-                    {(['stock', 'items', 'receipts', 'movements', ...(props.canViewBulk ? ['dispatches' as const] : []), 'documents', 'cooldown'] as const).map((value) => (
+                <TabsList ref={tabList} className="h-auto max-w-full flex-wrap justify-start bg-[#eaf1ed] shadow-none">
+                    {(
+                        [
+                            'stock',
+                            'items',
+                            'receipts',
+                            'movements',
+                            ...(props.canViewDistribution ? ['distributions' as const] : []),
+                            ...(props.canViewBulk ? ['dispatches' as const] : []),
+                            'documents',
+                            'cooldown',
+                        ] as const
+                    ).map((value) => (
                         <TabsTrigger key={value} value={value} className="capitalize">
-                            {value}
+                            {value === 'dispatches' ? 'Bulk Dispatches' : value}
                         </TabsTrigger>
                     ))}
                 </TabsList>
             </Tabs>
-            {props.tab === 'cooldown' ? (
+            {props.tab === 'distributions' ? (
+                <RequestList key={JSON.stringify(filters)} programId={program.id} records={props.records} filters={filters} options={options} />
+            ) : props.tab === 'cooldown' ? (
                 <ProgramCooldown
                     key={`${program.cooldown_enabled}-${program.cooldown_duration}-${program.cooldown_scope}-${program.cooldown_unit}`}
                     program={program}
@@ -96,35 +135,45 @@ export default function ProgramDetails(props: ProgramDetailsProps) {
                 <ProgramItems program={program} records={props.records} filters={filters} canManage={canManage} />
             ) : (
                 <DirectoryPanel
-                    label={tab === 'stock' ? 'Program stock' : tab === 'receipts' ? 'Program receipts' : tab === 'dispatches' ? 'Bulk dispatches' : 'Stock movements'}
+                    label={
+                        tab === 'stock'
+                            ? 'Program stock'
+                            : tab === 'receipts'
+                              ? 'Program receipts'
+                              : tab === 'dispatches'
+                                ? 'Bulk dispatches'
+                                : 'Stock movements'
+                    }
                     countLabel={`${props.records.meta.total.toLocaleString()} records`}
-                    toolbar={tab === 'dispatches' ? null :
-                        <div className="w-full space-y-3">
-                            <Filters
-                                appearance="directory"
-                                key={`${program.id}-${tab}`}
-                                filters={{ ...filters, tab }}
-                                options={tab === 'stock' ? options : undefined}
-                                program={program}
-                                period={tab === 'receipts' || tab === 'movements'}
-                                stock={tab === 'stock'}
-                                url={url}
-                            />
-                            {tab === 'receipts' && (
-                                <nav aria-label="Receipt status" className="flex flex-wrap gap-1 text-xs">
-                                    {['', 'draft', 'posted', 'voided'].map((status) => (
-                                        <Link
-                                            key={status}
-                                            aria-current={(filters.status ?? '') === status ? 'page' : undefined}
-                                            className={`rounded-md px-3 py-1.5 capitalize ${(filters.status ?? '') === status ? 'bg-[#eaf1ed] font-medium text-[#245e4f]' : 'text-[#75827c] hover:bg-[#f4f7f5]'}`}
-                                            href={`${url}?${new URLSearchParams({ ...filters, program_id: program.id, tab, status, page: '1' })}`}
-                                        >
-                                            {status || 'All receipts'}
-                                        </Link>
-                                    ))}
-                                </nav>
-                            )}
-                        </div>
+                    toolbar={
+                        tab === 'dispatches' ? null : (
+                            <div className="w-full space-y-3">
+                                <Filters
+                                    appearance="directory"
+                                    key={`${program.id}-${tab}`}
+                                    filters={{ ...filters, tab }}
+                                    options={tab === 'stock' ? options : undefined}
+                                    program={program}
+                                    period={tab === 'receipts' || tab === 'movements'}
+                                    stock={tab === 'stock'}
+                                    url={url}
+                                />
+                                {tab === 'receipts' && (
+                                    <nav aria-label="Receipt status" className="flex flex-wrap gap-1 text-xs">
+                                        {['', 'draft', 'posted', 'voided'].map((status) => (
+                                            <Link
+                                                key={status}
+                                                aria-current={(filters.status ?? '') === status ? 'page' : undefined}
+                                                className={`rounded-md px-3 py-1.5 capitalize ${(filters.status ?? '') === status ? 'bg-[#eaf1ed] font-medium text-[#245e4f]' : 'text-[#75827c] hover:bg-[#f4f7f5]'}`}
+                                                href={`${url}?${new URLSearchParams({ ...filters, program_id: program.id, tab, status, page: '1' })}`}
+                                            >
+                                                {status || 'All receipts'}
+                                            </Link>
+                                        ))}
+                                    </nav>
+                                )}
+                            </div>
+                        )
                     }
                 >
                     <div className="[&_a]:text-[#245e4f] [&_table]:table-fixed [&_th]:font-medium [&_thead]:border-y [&_thead]:border-[#e8ede9] [&_thead]:bg-[#f8faf9] [&_thead]:text-xs [&_thead]:text-[#75827c]">
@@ -150,7 +199,9 @@ export default function ProgramDetails(props: ProgramDetailsProps) {
                                                 <DirectoryStatus active={item.is_active} />
                                             </td>
                                             <td className={`${cell} col-span-2 text-right font-semibold tabular-nums`}>
-                                                <span className="mr-2 text-xs font-normal text-muted-foreground @min-[800px]/goods:hidden">Remaining stock</span>
+                                                <span className="mr-2 text-xs font-normal text-muted-foreground @min-[800px]/goods:hidden">
+                                                    Remaining stock
+                                                </span>
                                                 {quantity(item.balance)} {item.base_unit}
                                                 <p className="mt-1 text-xs font-normal text-muted-foreground">
                                                     Reserved {quantity(item.reserved ?? '0')} {item.base_unit}
@@ -159,7 +210,9 @@ export default function ProgramDetails(props: ProgramDetailsProps) {
                                                     Available {quantity(item.available ?? item.balance)} {item.base_unit}
                                                 </p>
                                                 <p className="mt-1 text-xs font-normal text-muted-foreground">
-                                                    With staff {quantity(item.with_staff ?? '0')} · Distributed {quantity(item.reported_distributed ?? '0')} · Returned {quantity(item.returned ?? '0')} {item.base_unit}
+                                                    With staff {quantity(item.with_staff ?? '0')} · Distributed{' '}
+                                                    {quantity(item.reported_distributed ?? '0')} · Returned {quantity(item.returned ?? '0')}{' '}
+                                                    {item.base_unit}
                                                 </p>
                                             </td>
                                         </tr>
@@ -251,7 +304,17 @@ export default function ProgramDetails(props: ProgramDetailsProps) {
                                                 ) : (
                                                     <p className="text-xs text-muted-foreground">{movement.reference}</p>
                                                 )}
-                                                {props.canViewBulk && movement.bulk_dispatch_id && <Link className="block text-xs text-[#245e4f] underline" href={goodsDistribution.bulk.show.url({ municipality: slug, dispatchId: movement.bulk_dispatch_id })}>View bulk dispatch</Link>}
+                                                {props.canViewBulk && movement.bulk_dispatch_id && (
+                                                    <Link
+                                                        className="block text-xs text-[#245e4f] underline"
+                                                        href={goodsDistribution.bulk.show.url({
+                                                            municipality: slug,
+                                                            dispatchId: movement.bulk_dispatch_id,
+                                                        })}
+                                                    >
+                                                        View bulk dispatch
+                                                    </Link>
+                                                )}
                                                 <p className="text-xs text-muted-foreground">{movement.actor}</p>
                                             </td>
                                             <td
@@ -264,14 +327,44 @@ export default function ProgramDetails(props: ProgramDetailsProps) {
                                 </tbody>
                             </table>
                         )}
-                        {props.tab === 'dispatches' && <table className="w-full text-left text-sm">
-                            <thead className="hidden border-b bg-muted/40 @min-[800px]/goods:table-header-group"><tr>{['Reference', 'Custodian', 'Destinations', 'Status'].map((label) => <th key={label} className={cell}>{label}</th>)}</tr></thead>
-                            <tbody className="block @min-[800px]/goods:table-row-group">{props.records.data.map((dispatch) => <tr key={dispatch.id} className={row}>
-                                <td className={cell}><Link href={goodsDistribution.bulk.show.url({ municipality: slug, dispatchId: dispatch.id })} className="font-medium hover:underline">{dispatch.reference}</Link><p className="text-xs text-muted-foreground">{dispatch.created_at.slice(0, 10)}</p></td>
-                                <td className={cell}>{dispatch.custodian_name || 'Not assigned'}<p className="text-xs text-muted-foreground">{dispatch.requester_name && `Requested by ${dispatch.requester_name}`}</p></td>
-                                <td className={cell}>{dispatch.destination_barangays.join(', ') || 'Not set'}</td><td className={cell}><StateBadge value={dispatch.status} /></td>
-                            </tr>)}</tbody>
-                        </table>}
+                        {props.tab === 'dispatches' && (
+                            <table className="w-full text-left text-sm">
+                                <thead className="hidden border-b bg-muted/40 @min-[800px]/goods:table-header-group">
+                                    <tr>
+                                        {['Reference', 'Custodian', 'Destinations', 'Status'].map((label) => (
+                                            <th key={label} className={cell}>
+                                                {label}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="block @min-[800px]/goods:table-row-group">
+                                    {props.records.data.map((dispatch) => (
+                                        <tr key={dispatch.id} className={row}>
+                                            <td className={cell}>
+                                                <Link
+                                                    href={goodsDistribution.bulk.show.url({ municipality: slug, dispatchId: dispatch.id })}
+                                                    className="font-medium hover:underline"
+                                                >
+                                                    {dispatch.reference}
+                                                </Link>
+                                                <p className="text-xs text-muted-foreground">{dispatch.created_at.slice(0, 10)}</p>
+                                            </td>
+                                            <td className={cell}>
+                                                {dispatch.custodian_name || 'Not assigned'}
+                                                <p className="text-xs text-muted-foreground">
+                                                    {dispatch.requester_name && `Requested by ${dispatch.requester_name}`}
+                                                </p>
+                                            </td>
+                                            <td className={cell}>{dispatch.destination_barangays.join(', ') || 'Not set'}</td>
+                                            <td className={cell}>
+                                                <StateBadge value={dispatch.status} />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                         {!props.records.data.length && (
                             <p className="py-10 text-center text-sm text-muted-foreground">No {tab === 'stock' ? 'stock items' : tab} found.</p>
                         )}

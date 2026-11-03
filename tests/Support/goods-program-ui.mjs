@@ -11,6 +11,7 @@ const manifest = JSON.parse(await readFile(path.join(root, 'public/build/manifes
 const entry = manifest['resources/js/app.tsx'];
 const program = { id: 'program-a', code: 'AICS', name: 'AICS Food Commodities', is_active: true, items_in_stock: 101, draft_receipts_count: 2 };
 const programsOnly = process.argv.includes('--programs-only');
+const distributionsOnly = process.argv.includes('--program-distributions-only');
 const inventoryOnly = process.argv.includes('--inventory-only');
 const receiptsOnly = process.argv.includes('--receipts-only');
 const catalogOnly = process.argv.includes('--catalog-only');
@@ -106,6 +107,8 @@ const baseProps = {
     flash: {},
     errors: {},
     canManage: true,
+    canViewDistribution: distributionsOnly,
+    canIntakeDistribution: distributionsOnly,
     canAdjust: true,
     options,
 };
@@ -191,7 +194,15 @@ function pageFor(url) {
             program: filters.long_name === '1' ? { ...program, name: 'LongProgramName'.repeat(12) } : program,
             tab,
             records: paginate(
-                tab === 'items'
+                tab === 'distributions' && !filters.empty
+                    ? ['draft', 'pending', 'released'].filter((status) => !filters.status || filters.status === status).map((status, i) => ({
+                        id: `request-${i}`, reference: `GD-2026-00000${i}`, program_id: program.id, program_name: program.name,
+                        beneficiary_id: 'person', assisted_household_member_id: null, status,
+                        created_at: '2026-10-01T08:00:00Z', actual_release_on: status === 'released' ? '2026-10-03' : null,
+                        snapshot: { filer: { name: 'Susan ' + 'LongRecipientName'.repeat(5) }, subject: { name: 'Susan Solis' }, household_code: 'HH-2026-00001', barangay: 'Uno' },
+                        handover_snapshot: status === 'released' ? { filer: { name: 'Susan Solis' }, subject: { name: 'Susan Solis' }, household_code: 'HH-HISTORICAL', barangay: 'Historical barangay' } : null,
+                    }))
+                    : tab === 'items'
                     ? [...programItems.values()]
                           .filter(
                               (row) =>
@@ -401,7 +412,27 @@ try {
         await page.keyboard.type(value);
     };
     await mkdir(path.join(root, 'storage/app'), { recursive: true });
-    if (process.argv.includes('--responsive-only')) {
+    if (distributionsOnly) {
+        await inspectGoodsPages(page, go, ['/programs/program-a?tab=distributions', '/programs/program-a?tab=distributions&empty=1'], path.join(root, 'storage/app'));
+        const activeVisible = await page.$eval('[role="tab"][data-state="active"]', (tab) => {
+            const bounds = tab.parentElement.getBoundingClientRect();
+            const selected = tab.getBoundingClientRect();
+            return selected.left >= bounds.left - 1 && selected.right <= bounds.right + 1;
+        });
+        assert.ok(activeVisible, 'The active program tab stays visible');
+        await go('/programs/program-a?tab=distributions&search=Susan&status=released&page=2');
+        assert.equal(await page.$('select[aria-label="Program"]'), null);
+        const href = await page.$eval('a[href*="/distribution/request-"]', (a) => a.href);
+        const context = new URL(href).searchParams;
+        assert.equal(context.get('program_context_id'), program.id);
+        assert.equal(context.get('program_search'), 'Susan');
+        assert.equal(context.get('program_status'), 'released');
+        assert.equal(context.get('program_page'), '2');
+        assert.ok((await page.$eval('main', (main) => main.textContent)).includes('HH-HISTORICAL'));
+        assert.ok((await page.$eval('main', (main) => main.textContent)).includes('Handed over 2026-10-03'));
+        assert.deepEqual(errors, []);
+        console.log('PASS: program distributions desktop/tablet/mobile, empty list, fixed program, historical snapshots and filtered return links.');
+    } else if (process.argv.includes('--responsive-only')) {
         await inspectGoodsPages(page, go, [
             '/programs', '/programs?search=NO-SUCH-PROGRAM', '/programs/program-a?long_name=1',
             '/programs/program-a?tab=items&long_name=1', '/programs/program-a?tab=receipts',
