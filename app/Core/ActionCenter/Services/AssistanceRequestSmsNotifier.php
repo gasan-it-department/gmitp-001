@@ -84,6 +84,13 @@ class AssistanceRequestSmsNotifier
         );
     }
 
+    public function requestReopened(AssistanceRequest $request): void
+    {
+        $this->notify($request, 'request_reopened', fn (string $office, string $reference): string => sprintf(
+            '%s: Muling binuksan para sa review ang request mo (%s). Hindi pa ito bagong approval o abiso ng release. Hintayin ang update ng MSWD.', $office, $reference,
+        ));
+    }
+
     public function approvedRequestCancelled(AssistanceRequest $request): void
     {
         $this->notify(

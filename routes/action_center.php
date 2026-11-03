@@ -475,6 +475,10 @@ Route::prefix('/api/action-center')
                     ->middleware('permission:action_center.requests.correct')
                     ->name('assistance.correct-approved-amount');
 
+                Route::post('/assistance-request/{assistanceRequestId}/reopen-cancelled', \App\External\Api\Controllers\ActionCenter\Assistance\ReopenCancelledAssistanceRequestController::class)
+                    ->middleware('permission:action_center.requests.decide')->middleware('permission:action_center.requests.correct')
+                    ->name('assistance.reopen-cancelled');
+
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/cancel-approved',
                     CancelApprovedAssistanceRequestController::class,

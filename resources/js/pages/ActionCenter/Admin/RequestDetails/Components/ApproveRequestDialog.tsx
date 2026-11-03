@@ -18,12 +18,14 @@ interface Props {
     minAmount?: number | null;
     maxAmount?: number | null;
     cooldownAdvisory: CooldownAdvisory;
+    reopenOperationKey?: string | null;
 }
 
-export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAmount, maxAmount, cooldownAdvisory }: Props) {
+export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAmount, maxAmount, cooldownAdvisory, reopenOperationKey }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         amount_approved: '',
+        reopen_operation_key: reopenOperationKey ?? null,
         approval_notes: '',
         cooldown_context_fingerprint: cooldownAdvisory.context_fingerprint,
         cooldown_exception_reason: '',
@@ -33,6 +35,9 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
     useEffect(() => {
         setData('cooldown_context_fingerprint', cooldownAdvisory.context_fingerprint);
     }, [cooldownAdvisory.context_fingerprint, setData]);
+    useEffect(() => {
+        setData('reopen_operation_key', reopenOperationKey ?? null);
+    }, [reopenOperationKey, setData]);
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();

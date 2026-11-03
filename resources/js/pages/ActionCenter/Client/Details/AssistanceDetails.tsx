@@ -1,3 +1,4 @@
+import AssistanceRecoveryHistory, { type RecoveryEvent } from '@/components/ActionCenter/AssistanceRecoveryHistory';
 import { AssistanceDocumentRequirement, AssistanceRequestFormDefinition } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
@@ -29,6 +30,7 @@ import {
 import { useState, type ReactNode } from 'react';
 
 interface AssistanceRequestDetails {
+    reopen_history?: RecoveryEvent[];
     id: string;
     transaction_number: string;
     status: string;
@@ -194,7 +196,8 @@ function statusPresentation(data: AssistanceRequestDetails): StatusPresentation 
         return {
             ...presentation,
             title: 'MSWD verification is complete',
-            description: 'MSWD has completed verification. Wait for release instructions and bring your valid ID and transaction number when asked to claim the assistance.',
+            description:
+                'MSWD has completed verification. Wait for release instructions and bring your valid ID and transaction number when asked to claim the assistance.',
         };
     }
 
@@ -202,7 +205,8 @@ function statusPresentation(data: AssistanceRequestDetails): StatusPresentation 
         return {
             ...presentation,
             title: 'MSWD needs additional information',
-            description: 'The assistance amount remains approved, but MSWD needs additional information or documents before release. Follow the office instructions and bring your transaction number.',
+            description:
+                'The assistance amount remains approved, but MSWD needs additional information or documents before release. Follow the office instructions and bring your transaction number.',
         };
     }
 
@@ -301,17 +305,17 @@ function buildTimeline(data: AssistanceRequestDetails): TimelineEntry[] {
             entries.push(
                 data.mswd_verification_status === 'verified'
                     ? {
-                        label: 'MSWD verification complete',
-                        detail: 'MSWD completed the document and eligibility verification.',
-                        state: 'complete',
-                    }
+                          label: 'MSWD verification complete',
+                          detail: 'MSWD completed the document and eligibility verification.',
+                          state: 'complete',
+                      }
                     : data.mswd_verification_status === 'needs_correction'
-                        ? {
+                      ? {
                             label: 'MSWD correction needed',
                             detail: 'MSWD needs additional information or documents before release.',
                             state: 'current',
                         }
-                        : {
+                      : {
                             label: 'MSWD verification',
                             detail: 'MSWD is completing the document and eligibility verification.',
                             state: 'current',
@@ -549,6 +553,11 @@ export default function AssistanceDetails({ request }: Props) {
             <Head title={`${data.transaction_number} - Assistance Request`} />
 
             <main className="min-h-screen bg-slate-50 py-6 sm:py-9">
+                {!!data.reopen_history?.length && (
+                    <div className="mx-auto mb-5 max-w-6xl px-4 sm:px-6 lg:px-8">
+                        <AssistanceRecoveryHistory events={data.reopen_history} />
+                    </div>
+                )}
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                     <Link
                         href={actionCenter.index.url({ municipality: currentMunicipality.slug })}
@@ -601,7 +610,7 @@ export default function AssistanceDetails({ request }: Props) {
                                     <Banknote className="h-4 w-4" aria-hidden="true" />
                                     {data.status === 'cancelled' && data.amount_approved !== null
                                         ? 'Previously approved assistance'
-                                    : 'Authorized assistance amount'}
+                                        : 'Authorized assistance amount'}
                                 </p>
                                 <p
                                     className={`mt-2 font-bold break-words ${data.amount_approved === null ? 'text-base text-slate-700' : 'text-2xl text-emerald-700'}`}

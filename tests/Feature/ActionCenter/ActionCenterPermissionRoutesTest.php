@@ -58,6 +58,7 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.assistance.authorize-cooldown-exception' => 'action_center.requests.decide',
         'actionCenter.assistance.cooldown-context' => 'action_center.requests.decide|action_center.requests.release',
         'actionCenter.assistance.correct-approved-amount' => 'action_center.requests.decide',
+        'actionCenter.assistance.reopen-cancelled' => 'action_center.requests.decide',
         'actionCenter.assistance.cancel-approved' => 'action_center.requests.decide',
         'actionCenter.assistance.reject' => 'action_center.requests.decide',
         'actionCenter.assistance.disbursement.save' => 'action_center.requests.disburse',
@@ -129,6 +130,8 @@ it('assigns every admin action center route to one explicit capability', functio
     }
 
     expect(Route::getRoutes()->getByName('actionCenter.assistance.correct-approved-amount')?->gatherMiddleware() ?? [])
+        ->toContain('permission:action_center.requests.correct');
+    expect(Route::getRoutes()->getByName('actionCenter.assistance.reopen-cancelled')?->gatherMiddleware() ?? [])
         ->toContain('permission:action_center.requests.correct');
 
 });

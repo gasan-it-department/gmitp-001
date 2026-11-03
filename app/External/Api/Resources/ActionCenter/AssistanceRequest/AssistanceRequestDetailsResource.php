@@ -34,12 +34,17 @@ class AssistanceRequestDetailsResource extends JsonResource
     {
         $snapshot = $this->resource->snapshot;
         $householdAssessment = data_get($this->metadata, 'household_assessment_snapshot');
+        $recovery = app(\App\Core\ActionCenter\Services\CancelledAssistanceRecoveryService::class);
+        $canReopen = $this->status->value === 'cancelled' && $request->user()?->can('action_center.requests.decide') && $request->user()?->can('action_center.requests.correct');
 
         return [
             // ── Identification ───────────────────────────────────────────────
             'id' => $this->id,
             'transaction_number' => $this->transaction_number,
             'status' => $this->status,
+            'reopen_recovery' => $canReopen ? ['context_token' => $recovery->token($this->resource), 'blocker' => $recovery->blocker($this->resource)] : null,
+            'reopen_history' => $recovery->history($this->resource),
+            'reopen_operation_key' => data_get(collect(data_get($this->metadata, 'reopen_history', []))->last(), 'operation_key'),
             'mswd_verification_status' => $this->mswd_verification_status?->value,
 
             // ── Program ──────────────────────────────────────────────────────

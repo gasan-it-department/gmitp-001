@@ -50,6 +50,10 @@ class ApproveAssistanceRequestAction
             );
 
             $this->ensureTransitionAllowed($request);
+            $recovery = collect(data_get($request->metadata, 'reopen_history', []))->last();
+            if ($recovery && (! $dto->reopenOperationKey || ! hash_equals($recovery['operation_key'], $dto->reopenOperationKey))) {
+                throw new \DomainException('This request was reopened. Refresh and review the new amount before approving.');
+            }
             $definition = $this->formDefinitions->for($dto->municipalCode, $request->assistanceType?->slug);
             $this->ensureConfiguredRequestFieldsReady($request, $definition);
             $this->ensureAmountWithinLimits($request, $dto->amountApproved);

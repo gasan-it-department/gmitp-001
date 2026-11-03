@@ -27,6 +27,7 @@ readonly class ApproveAssistanceRequestDto
         public string $approvalNotes,
         public string $cooldownContextFingerprint = '',
         public ?string $cooldownExceptionReason = null,
+        public ?string $reopenOperationKey = null,
     ) {}
 
     /**
@@ -48,6 +49,7 @@ readonly class ApproveAssistanceRequestDto
             amountApproved: (float) $request->validated('amount_approved'),
             approvalNotes: (string) $request->validated('approval_notes'),
             cooldownContextFingerprint: (string) $request->validated('cooldown_context_fingerprint'),
+            reopenOperationKey: $request->validated('reopen_operation_key'),
             cooldownExceptionReason: filled($request->validated('cooldown_exception_reason'))
                 ? trim((string) $request->validated('cooldown_exception_reason'))
                 : null,
