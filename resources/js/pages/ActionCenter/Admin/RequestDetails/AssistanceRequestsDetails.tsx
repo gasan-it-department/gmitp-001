@@ -9,7 +9,9 @@ import ShowObligationRequestGeneratorController from '@/actions/App/External/Web
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ShowHouseholdProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Household/ShowHouseholdProfileController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
+import AssistanceRecoveryHistory, { type RecoveryEvent } from '@/components/ActionCenter/AssistanceRecoveryHistory';
 import { ContactPhoneActions } from '@/components/ActionCenter/ContactPhoneActions';
+import ReopenCancelledRequestDialog from '@/components/ActionCenter/ReopenCancelledRequestDialog';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { FlashHandler } from '@/components/Shared/FlashHandler';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +58,7 @@ import {
     Printer,
     ReceiptText,
     RefreshCw,
+    RotateCcw,
     Send,
     ShieldCheck,
     Upload,
@@ -182,6 +185,9 @@ interface RequestHousehold {
 }
 
 interface AssistanceRequestDetail {
+    reopen_recovery?: { context_token: string; blocker: string | null } | null;
+    reopen_history?: RecoveryEvent[];
+    reopen_operation_key?: string | null;
     id: string;
     transaction_number: string;
     status: string;
@@ -334,6 +340,7 @@ export default function AssistanceRequestsDetails({
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isCorrectAmountOpen, setIsCorrectAmountOpen] = useState(false);
+    const [isRecoveryOpen, setIsRecoveryOpen] = useState(false);
     const [isCancelApprovedOpen, setIsCancelApprovedOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
@@ -560,6 +567,30 @@ export default function AssistanceRequestsDetails({
     return (
         <>
             <div className="bg-slate-50 pb-12">
+                {detail.reopen_recovery && canDecideRequests && canCorrectRequests && (
+                    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+                        <Button variant="outline" onClick={() => setIsRecoveryOpen(true)}>
+                            <RotateCcw className="mr-2 size-4" />
+                            Reopen for Review
+                        </Button>
+                        <ReopenCancelledRequestDialog
+                            key={detail.reopen_recovery.context_token}
+                            id={detail.id}
+                            slug={currentMunicipality.slug}
+                            token={detail.reopen_recovery.context_token}
+                            blocker={detail.reopen_recovery.blocker}
+                            amount={detail.amount_approved}
+                            cancelledAt={detail.cancelled_at}
+                            open={isRecoveryOpen}
+                            onClose={() => setIsRecoveryOpen(false)}
+                        />
+                    </div>
+                )}
+                {!!detail.reopen_history?.length && (
+                    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+                        <AssistanceRecoveryHistory events={detail.reopen_history} />
+                    </div>
+                )}
                 {/* Back navigation */}
                 <div className="border-b border-slate-200 bg-white">
                     <div className="container mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
@@ -1565,6 +1596,7 @@ export default function AssistanceRequestsDetails({
                         minAmount={detail.assistance_type?.min_amount}
                         maxAmount={detail.assistance_type?.max_amount}
                         cooldownAdvisory={cooldownAdvisory}
+                        reopenOperationKey={detail.reopen_operation_key}
                     />
 
                     <CancelApprovedRequestDialog

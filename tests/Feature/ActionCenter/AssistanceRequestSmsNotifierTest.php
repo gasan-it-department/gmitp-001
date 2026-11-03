@@ -42,6 +42,7 @@ it('sends the assistance request lifecycle messages', function (string $method, 
     'approved' => ['requestApproved', 'Na-record na ang approved amount'],
     'rejected' => ['requestRejected', 'Hindi naaprubahan'],
     'released' => ['requestReleased', 'Naitala nang released'],
+    'reopened' => ['requestReopened', 'Muling binuksan para sa review'],
 ]);
 
 it('does not invite an admin-encoded walk-in to return to the office', function () {

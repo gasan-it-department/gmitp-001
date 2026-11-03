@@ -43,6 +43,7 @@ class ApproveAssistanceRequestRequest extends FormRequest
             'approval_notes' => ['required', 'string', 'min:10', 'max:2000'],
 
             'cooldown_context_fingerprint' => ['required', 'string', 'size:64'],
+            'reopen_operation_key' => ['nullable', 'string', 'max:100'],
             'cooldown_exception_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
 
             // Explicit acknowledgement before committing the authorized amount.

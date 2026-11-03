@@ -165,6 +165,24 @@ class AssistanceRequest extends Model implements HasMedia
             ->useLogName('assistance_request');
     }
 
+    private bool $allowCancelledRecovery = false;
+
+    public function reopenCancelledForReview(array $metadata, string $remarks): void
+    {
+        if ($this->status !== AssistanceStatus::Cancelled || ! $this->approved_at || ! $this->approved_by_user_id
+            || (float) $this->amount_approved <= 0 || $this->hasReleaseArtifacts()) {
+            throw new \DomainException('Only a cancelled, previously approved, unpaid request can be recovered.');
+        }
+        $this->allowCancelledRecovery = true;
+        try {
+            $this->update(['status' => AssistanceStatus::Pending, 'amount_approved' => null, 'approved_at' => null,
+                'approved_by_user_id' => null, 'cancelled_at' => null, 'cancelled_by_user_id' => null,
+                'metadata' => $metadata, 'remarks' => $remarks]);
+        } finally {
+            $this->allowCancelledRecovery = false;
+        }
+    }
+
     protected static function booted(): void
     {
         static::updating(function (self $request): void {
@@ -174,6 +192,12 @@ class AssistanceRequest extends Model implements HasMedia
             $dirtyFields = array_keys($request->getDirty());
 
             if ($dirtyFields === []) {
+                return;
+            }
+
+            if ($request->allowCancelledRecovery && $originalStatus === AssistanceStatus::Cancelled
+                && $request->status === AssistanceStatus::Pending
+                && array_diff($dirtyFields, ['status', 'amount_approved', 'approved_at', 'approved_by_user_id', 'cancelled_at', 'cancelled_by_user_id', 'metadata', 'remarks', 'updated_at']) === []) {
                 return;
             }
 
