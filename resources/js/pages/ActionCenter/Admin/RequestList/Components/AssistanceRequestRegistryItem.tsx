@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowRight, CalendarClock, CalendarDays, FilePenLine, MapPin, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AssistanceRequestListItem, disbursementStatusLabel, humanizeStatus, statusClass } from './AssistanceRequestTable';
+import MatchingPaymentReferences from './MatchingPaymentReferences';
 
 const mswdLabel = (status: AssistanceRequestListItem['mswd_verification_status']) =>
     status ? `MSWD ${status.replace(/_/g, ' ')}` : 'MSWD not recorded';
@@ -29,6 +30,8 @@ export default function AssistanceRequestRegistryItem({ row, viewUrl }: Props) {
                         {humanizeStatus(row.status)}
                     </span>
                 </div>
+
+                <MatchingPaymentReferences matches={row.matching_payment_references} />
 
                 <div className="mt-3 min-w-0">
                     <div className="flex items-start gap-2">

@@ -460,6 +460,25 @@ it('creates and updates one frozen disbursement draft without releasing the requ
         ->and($request->fresh()->released_at)->toBeNull();
 });
 
+it('rejects a reference recorded after a successful lookup without changing the current request', function () {
+    $lookup = app(\App\Core\ActionCenter\UseCase\Assistance\FindAssistanceDisbursementReferencesAction::class);
+    expect($lookup->execute($this->requestId, $this->municipalId, 'check', 'RACE-001')['blocking'])->toBeFalse();
+    $other = AssistanceRequest::findOrFail($this->requestId)->replicate();
+    $other->transaction_number = 'REQ-RACE-OTHER';
+    $other->save();
+    AssistanceDisbursement::create(array_replace(disbursementAttributes($this), [
+        'assistance_request_id' => $other->id, 'instrument_reference_number' => 'RACE-001',
+    ]));
+    $service = Mockery::mock(AssistanceDisbursementService::class);
+    $service->shouldReceive('assertRequestCanPrepare')->once();
+    $service->shouldReceive('resolveClaimLocation')->once()->andReturn(['key' => 'treasury', 'label' => 'Treasury', 'instructions' => 'Bring ID.']);
+    $action = new SaveAssistanceDisbursementAction(new LockActionCenterMunicipalityAction, new LockAssistanceRequestAction, $service);
+    expect(fn () => $action->execute(disbursementDto($this, 'check', 'RACE-001')))
+        ->toThrow(DomainException::class, 'already recorded');
+    expect(AssistanceDisbursement::where('assistance_request_id', $this->requestId)->count())->toBe(0)
+        ->and($lookup->execute($this->requestId, $this->municipalId, 'check', 'RACE-001')['blocking'])->toBeTrue();
+});
+
 it('marks the instrument ready without releasing, then records physical handover atomically', function () {
     $request = AssistanceRequest::query()->findOrFail($this->requestId);
     $draft = AssistanceDisbursement::query()->create(disbursementAttributes($this));

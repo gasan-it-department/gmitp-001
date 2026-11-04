@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Services\AssistanceCooldownService;
+use App\Core\ActionCenter\Services\AssistanceDisbursementReferenceService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
@@ -44,7 +45,7 @@ class ListAssistanceRequestAction
      *     mswd_verification_statuses?: list<string>|null,
      * } $filters
      */
-    public function execute(string $municipalId, array $filters = []): LengthAwarePaginator
+    public function execute(string $municipalId, array $filters = [], bool $includePaymentReferences = false): LengthAwarePaginator
     {
         // Only the relations AssistanceRequestListResource actually consumes:
         //   - assistanceType  → program name + slug for the row's "Program" column
@@ -128,20 +129,35 @@ class ListAssistanceRequestAction
         // Covers transaction number, the filer's frozen identity snapshot, and
         // the on-behalf name columns so admins can find a record by any name.
         $search = $this->normalizeSearch($filters['search'] ?? null);
+        $referenceSearch = trim((string) ($filters['search'] ?? ''));
+        $searchPayments = $includePaymentReferences && $referenceSearch !== '' && Schema::hasTable('ac_assistance_disbursements');
+        $references = app(AssistanceDisbursementReferenceService::class);
+
+        if ($searchPayments) {
+            $query->with(['disbursements' => fn ($query) => $references->containing(
+                $query->getQuery()->where('municipal_id', $municipalId), $referenceSearch,
+            )->orderByDesc('created_at')->orderBy('id')]);
+        }
 
         if ($search !== null) {
             $tokens = array_values(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: []);
 
-            $query->where(function (Builder $requestQuery) use ($search, $tokens): void {
-                $requestQuery->where('transaction_number', 'like', "%{$search}%")
-                    ->orWhereHas('snapshot', function (Builder $snapshotQuery) use ($tokens): void {
-                        $this->whereEveryNameTokenMatchesAField(
-                            $snapshotQuery,
-                            $tokens,
-                            ['first_name', 'middle_name', 'last_name', 'suffix'],
-                        );
-                    })
-                    ->orWhere(function (Builder $metadataQuery) use ($tokens): void {
+            $query->where(function (Builder $requestQuery) use ($search, $tokens, $searchPayments, $references, $referenceSearch, $municipalId, $includePaymentReferences): void {
+                if ($includePaymentReferences) {
+                    $literal = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
+                    $requestQuery->whereRaw("transaction_number LIKE ? ESCAPE '!'", ['%'.$literal.'%']);
+                } else {
+                    $requestQuery->where('transaction_number', 'like', "%{$search}%");
+                }
+                $requestQuery->orWhereHas('snapshot', function (Builder $snapshotQuery) use ($tokens, $includePaymentReferences): void {
+                    $this->whereEveryNameTokenMatchesAField(
+                        $snapshotQuery,
+                        $tokens,
+                        ['first_name', 'middle_name', 'last_name', 'suffix'],
+                        $includePaymentReferences,
+                    );
+                })
+                    ->orWhere(function (Builder $metadataQuery) use ($tokens, $includePaymentReferences): void {
                         $this->whereEveryNameTokenMatchesAField(
                             $metadataQuery,
                             $tokens,
@@ -151,8 +167,14 @@ class ListAssistanceRequestAction
                                 'metadata->on_behalf_last_name',
                                 'metadata->on_behalf_suffix',
                             ],
+                            $includePaymentReferences,
                         );
                     });
+                if ($searchPayments) {
+                    $requestQuery->orWhereHas('disbursements', fn (Builder $query) => $references->containing(
+                        $query->where('municipal_id', $municipalId), $referenceSearch,
+                    ));
+                }
             });
         }
 
@@ -209,13 +231,17 @@ class ListAssistanceRequestAction
         Builder $query,
         array $tokens,
         array $fields,
+        bool $literal = false,
     ): void {
         foreach ($tokens as $token) {
-            $term = "%{$token}%";
+            $term = '%'.($literal ? str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $token) : $token).'%';
 
-            $query->where(function (Builder $tokenQuery) use ($term, $fields): void {
+            $query->where(function (Builder $tokenQuery) use ($term, $fields, $literal): void {
                 foreach ($fields as $index => $field) {
-                    if ($index === 0) {
+                    if ($literal) {
+                        $wrapped = $tokenQuery->getQuery()->getGrammar()->wrap($field);
+                        $tokenQuery->whereRaw($wrapped." LIKE ? ESCAPE '!'", [$term], $index === 0 ? 'and' : 'or');
+                    } elseif ($index === 0) {
                         $tokenQuery->where($field, 'like', $term);
                     } else {
                         $tokenQuery->orWhere($field, 'like', $term);

@@ -9,6 +9,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\CompleteAssistanceMswdV
 use App\External\Api\Controllers\ActionCenter\Assistance\ConfirmAssistanceFilerRelationshipsController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectApprovedAssistanceAmountController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
+use App\External\Api\Controllers\ActionCenter\Assistance\FindAssistanceDisbursementReferencesController;
 use App\External\Api\Controllers\ActionCenter\Assistance\GetAssistanceCooldownContextController;
 use App\External\Api\Controllers\ActionCenter\Assistance\MarkAssistanceDisbursementReadyController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReassignAssistanceMswdReviewerController;
@@ -496,6 +497,12 @@ Route::prefix('/api/action-center')
 
                 // Financial preparation and claim notification are separate
                 // from the terminal physical-handover transition below.
+                Route::get(
+                    '/assistance-request/{assistanceRequestId}/disbursement/reference-matches',
+                    FindAssistanceDisbursementReferencesController::class,
+                )->middleware(['permission:action_center.requests.view', 'permission:action_center.requests.disburse'])
+                    ->name('assistance.disbursement.reference-matches');
+
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/disbursement',
                     SaveAssistanceDisbursementController::class,

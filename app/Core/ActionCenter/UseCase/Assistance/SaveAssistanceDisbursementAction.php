@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Assistance\SaveAssistanceDisbursementDto;
 use App\Core\ActionCenter\Enums\AssistanceDisbursementMethod;
 use App\Core\ActionCenter\Enums\AssistanceDisbursementStatus;
 use App\Core\ActionCenter\Models\AssistanceDisbursement;
+use App\Core\ActionCenter\Services\AssistanceDisbursementReferenceService;
 use App\Core\ActionCenter\Services\AssistanceDisbursementService;
 use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
@@ -18,6 +19,7 @@ class SaveAssistanceDisbursementAction
         private readonly LockActionCenterMunicipalityAction $lockMunicipality,
         private readonly LockAssistanceRequestAction $lockRequest,
         private readonly AssistanceDisbursementService $disbursements,
+        private readonly AssistanceDisbursementReferenceService $references = new AssistanceDisbursementReferenceService,
     ) {}
 
     public function execute(SaveAssistanceDisbursementDto $dto): AssistanceDisbursement
@@ -46,13 +48,9 @@ class SaveAssistanceDisbursementAction
                 throw new \DomainException('The ready disbursement is locked. Void it before preparing a replacement.');
             }
 
-            $duplicate = AssistanceDisbursement::query()
-                ->where('municipal_id', $dto->municipalId)
-                ->where('method', $method->value)
-                ->where('instrument_reference_number', $dto->instrumentReferenceNumber)
-                ->where('status', '!=', AssistanceDisbursementStatus::Voided->value)
-                ->when($active, fn ($query) => $query->whereKeyNot($active->id))
-                ->exists();
+            $duplicate = $this->references->blocking($this->references->matches(
+                $dto->municipalId, $method->value, $dto->instrumentReferenceNumber, $active?->id,
+            ))->exists();
             if ($duplicate) {
                 throw new \DomainException('That check or cash-voucher reference is already recorded.');
             }

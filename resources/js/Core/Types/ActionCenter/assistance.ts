@@ -249,6 +249,25 @@ export interface HouseholdSummary {
     street: string | null;
 }
 
+export interface AssistanceDisbursementReferenceMatch {
+    id: string;
+    request_id: string;
+    transaction_number?: string;
+    payee_name: string;
+    amount: string;
+    method: 'check' | 'cash';
+    reference: string;
+    instrument_date: string | null;
+    status: 'preparing' | 'ready' | 'released' | 'voided';
+    blocking: boolean;
+}
+
+export interface AssistanceDisbursementReferenceResults {
+    data: AssistanceDisbursementReferenceMatch[];
+    blocking: boolean;
+    meta: { current_page: number; last_page: number; total: number };
+}
+
 /**
  * Mirrors HouseholdMemberOptionResource. One entry per active member of the
  * filer's household — the picker on the Apply form uses these to let the
