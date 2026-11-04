@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { AssistanceDisbursementReferenceMatch } from '@/Core/Types/ActionCenter/assistance';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import Utility from '@/pages/Utility/Utility';
 import { Link } from '@inertiajs/react';
 import { CalendarClock, ChevronRight } from 'lucide-react';
+import MatchingPaymentReferences from './MatchingPaymentReferences';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirror AssistanceRequestListResource exactly. Re-export so the
@@ -14,6 +16,7 @@ import { CalendarClock, ChevronRight } from 'lucide-react';
 export interface AssistanceRequestListItem {
     id: string;
     transaction_number: string;
+    matching_payment_references?: AssistanceDisbursementReferenceMatch[];
     status: string;
     mswd_verification_status: 'pending' | 'under_review' | 'needs_correction' | 'verified' | null;
     disbursement_status: 'not_started' | 'preparing' | 'ready' | 'released' | 'voided' | null;
@@ -195,7 +198,10 @@ export function AssistanceRequestTable({ paginator, onView, getViewUrl }: Props)
                                         <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
 
                                         {/* Ref No. */}
-                                        <TableCell className="font-mono text-xs font-semibold text-gray-800">{row.transaction_number}</TableCell>
+                                        <TableCell className="max-w-xs font-mono text-xs font-semibold break-all text-gray-800">
+                                            {row.transaction_number}
+                                            <MatchingPaymentReferences matches={row.matching_payment_references} />
+                                        </TableCell>
 
                                         {/* Subject and filer — historical names from the request snapshot */}
                                         <TableCell className="text-xs">

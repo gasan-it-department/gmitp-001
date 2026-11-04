@@ -62,6 +62,7 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.assistance.cancel-approved' => 'action_center.requests.decide',
         'actionCenter.assistance.reject' => 'action_center.requests.decide',
         'actionCenter.assistance.disbursement.save' => 'action_center.requests.disburse',
+        'actionCenter.assistance.disbursement.reference-matches' => 'action_center.requests.disburse',
         'actionCenter.assistance.disbursement.ready' => 'action_center.requests.disburse',
         'actionCenter.assistance.disbursement.retry-notification' => 'action_center.requests.disburse',
         'actionCenter.assistance.disbursement.manual-contact' => 'action_center.requests.disburse',
@@ -133,5 +134,7 @@ it('assigns every admin action center route to one explicit capability', functio
         ->toContain('permission:action_center.requests.correct');
     expect(Route::getRoutes()->getByName('actionCenter.assistance.reopen-cancelled')?->gatherMiddleware() ?? [])
         ->toContain('permission:action_center.requests.correct');
+    expect(Route::getRoutes()->getByName('actionCenter.assistance.disbursement.reference-matches')?->gatherMiddleware() ?? [])
+        ->toContain('permission:action_center.requests.view');
 
 });

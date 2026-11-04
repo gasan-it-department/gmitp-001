@@ -92,14 +92,80 @@ beforeEach(function (): void {
         $table->unsignedInteger('order_column')->nullable();
         $table->nullableTimestamps();
     });
+    Schema::create('ac_assistance_disbursements', function (Blueprint $table): void {
+        $table->ulid('id')->primary();
+        $table->ulid('municipal_id');
+        $table->ulid('assistance_request_id');
+        $table->unsignedInteger('attempt_number')->default(1);
+        $table->string('method');
+        $table->string('status');
+        $table->decimal('amount', 10, 2);
+        $table->string('payee_name');
+        $table->string('instrument_reference_number');
+        $table->date('instrument_date');
+        $table->timestamps();
+    });
 });
 
 afterEach(function (): void {
     activity()->enableLogging();
 
-    foreach (['media', 'ac_assistance_request_snapshots', 'ac_assistance_requests', 'ac_assistance_types'] as $table) {
+    foreach (['ac_assistance_disbursements', 'media', 'ac_assistance_request_snapshots', 'ac_assistance_requests', 'ac_assistance_types'] as $table) {
         Schema::dropIfExists($table);
     }
+});
+
+it('searches historical payment references once per request without expanding default citizen searches', function (): void {
+    $municipalId = (string) Str::ulid();
+    $record = createListSearchRequest($municipalId, []);
+    foreach (['voided', 'released'] as $status) {
+        DB::table('ac_assistance_disbursements')->insert([
+            'id' => (string) Str::ulid(), 'municipal_id' => $municipalId, 'assistance_request_id' => $record->id,
+            'method' => 'check', 'status' => $status, 'amount' => 500, 'payee_name' => 'Saved Payee',
+            'instrument_reference_number' => '000Ab-12%_!', 'instrument_date' => '2026-11-01', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+    $action = app(ListAssistanceRequestAction::class);
+    expect($action->execute($municipalId, ['search' => 'ab-12%_!'])->total())->toBe(0);
+    $result = $action->execute($municipalId, ['search' => 'ab-12%_!'], includePaymentReferences: true);
+    expect($result->total())->toBe(1)->and($result->first()->id)->toBe($record->id)
+        ->and($result->first()->disbursements)->toHaveCount(2);
+
+    $http = Request::create('/');
+    $http->setUserResolver(fn () => new class
+    {
+        public function can(string $permission): bool
+        {
+            return true;
+        }
+    });
+    $data = (new AssistanceRequestListResource($result->first()))->resolve($http);
+    expect($data['matching_payment_references'])->toHaveCount(2)
+        ->and($data['matching_payment_references']->resolve($http)[0]['reference'])->toBe('000Ab-12%_!');
+    $citizenData = (new AssistanceRequestListResource($result->first()))->resolve(Request::create('/'));
+    expect($citizenData)->not->toHaveKey('matching_payment_references');
+});
+
+it('treats reference wildcard characters literally and preserves payment-search scopes', function (): void {
+    $municipalId = (string) Str::ulid();
+    $reviewer = (string) Str::ulid();
+    $records = [];
+    foreach (['00%_!Ref', '00OTHERRef', '00%_!Ref', '00%_!Ref'] as $index => $reference) {
+        $tenant = $index === 3 ? (string) Str::ulid() : $municipalId;
+        $record = createListSearchRequest($tenant, [], ['status' => $index === 2 ? 'approved' : 'under_review', 'reviewed_by_user_id' => $reviewer]);
+        $records[] = $record;
+        DB::table('ac_assistance_disbursements')->insert([
+            'id' => (string) Str::ulid(), 'municipal_id' => $tenant, 'assistance_request_id' => $record->id,
+            'method' => 'cash', 'status' => 'voided', 'amount' => 500, 'payee_name' => 'Saved Payee',
+            'instrument_reference_number' => $reference, 'instrument_date' => '2026-11-01', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+    $result = app(ListAssistanceRequestAction::class)->execute($municipalId, [
+        'search' => '%_!r', 'status' => 'under_review', 'reviewed_by_user_id' => $reviewer,
+        'date_from' => now()->toDateString(), 'date_to' => now()->toDateString(), 'per_page' => 1,
+    ], includePaymentReferences: true);
+    expect($result->total())->toBe(1)->and($result->first()->id)->toBe($records[0]->id)->and($result->perPage())->toBe(1);
+    expect(app(ListAssistanceRequestAction::class)->execute($municipalId, ['search' => '%'], includePaymentReferences: true)->total())->toBe(2);
 });
 
 it('searches transaction and filer names case-insensitively across all name fields', function (): void {

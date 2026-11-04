@@ -9,7 +9,8 @@ import { AssistanceClaimLocation, AssistanceDisbursement } from '@/Core/Types/Ac
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
 import { Banknote, Loader2 } from 'lucide-react';
-import { FormEvent, useEffect } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import DisbursementReferenceMatches from './DisbursementReferenceMatches';
 
 interface Props {
     requestId: string;
@@ -29,6 +30,8 @@ const localToday = () => {
 
 export default function PrepareDisbursementDialog({ requestId, amount, claimantName, existing, locations, open, onClose }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const wasOpen = useRef(false);
+    const [referenceRefresh, setReferenceRefresh] = useState(0);
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         method: existing?.method ?? 'check',
         instrument_reference_number: existing?.instrument_reference_number ?? '',
@@ -38,7 +41,9 @@ export default function PrepareDisbursementDialog({ requestId, amount, claimantN
     });
 
     useEffect(() => {
-        if (!open) return;
+        const opening = open && !wasOpen.current;
+        wasOpen.current = open;
+        if (!opening) return;
         setData({
             method: existing?.method ?? 'check',
             instrument_reference_number: existing?.instrument_reference_number ?? '',
@@ -54,6 +59,7 @@ export default function PrepareDisbursementDialog({ requestId, amount, claimantN
         post(SaveAssistanceDisbursementController.url({ assistanceRequestId: requestId }), {
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
             preserveScroll: true,
+            onError: () => setReferenceRefresh((value) => value + 1),
             onSuccess: () => {
                 reset();
                 onClose();
@@ -67,7 +73,7 @@ export default function PrepareDisbursementDialog({ requestId, amount, claimantN
 
     return (
         <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+            <DialogContent className="max-h-[90vh] min-w-0 overflow-y-auto sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>{existing ? 'Edit disbursement draft' : 'Prepare disbursement'}</DialogTitle>
                     <DialogDescription>
@@ -90,7 +96,13 @@ export default function PrepareDisbursementDialog({ requestId, amount, claimantN
 
                     <div className="space-y-1.5">
                         <Label>Payment method</Label>
-                        <Select value={data.method} onValueChange={(value: 'check' | 'cash') => setData('method', value)}>
+                        <Select
+                            value={data.method}
+                            onValueChange={(value: 'check' | 'cash') => {
+                                setData('method', value);
+                                clearErrors('method', 'disbursement' as keyof typeof data);
+                            }}
+                        >
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
@@ -108,7 +120,10 @@ export default function PrepareDisbursementDialog({ requestId, amount, claimantN
                             <Input
                                 id="instrument_reference_number"
                                 value={data.instrument_reference_number}
-                                onChange={(event) => setData('instrument_reference_number', event.target.value)}
+                                onChange={(event) => {
+                                    setData('instrument_reference_number', event.target.value);
+                                    clearErrors('instrument_reference_number', 'disbursement' as keyof typeof data);
+                                }}
                                 maxLength={100}
                             />
                             {errors.instrument_reference_number && <p className="text-xs text-red-600">{errors.instrument_reference_number}</p>}
@@ -124,6 +139,16 @@ export default function PrepareDisbursementDialog({ requestId, amount, claimantN
                             {errors.instrument_date && <p className="text-xs text-red-600">{errors.instrument_date}</p>}
                         </div>
                     </div>
+
+                    {open && (
+                        <DisbursementReferenceMatches
+                            requestId={requestId}
+                            municipality={currentMunicipality.slug}
+                            method={data.method}
+                            reference={data.instrument_reference_number}
+                            refreshKey={referenceRefresh}
+                        />
+                    )}
 
                     <div className="space-y-1.5">
                         <Label>Claim location</Label>

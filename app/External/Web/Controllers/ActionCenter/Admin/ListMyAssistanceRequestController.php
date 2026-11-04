@@ -72,7 +72,7 @@ class ListMyAssistanceRequestController extends Controller
             'reviewed_by_user_id' => Auth::id(),
         ]);
 
-        $assistanceRequests = $this->listAssistanceRequestAction->execute($municipalId, $filters);
+        $assistanceRequests = $this->listAssistanceRequestAction->execute($municipalId, $filters, includePaymentReferences: true);
 
         // Same dropdown the All Cases page uses — narrowing the personal
         // worklist by program is still useful.

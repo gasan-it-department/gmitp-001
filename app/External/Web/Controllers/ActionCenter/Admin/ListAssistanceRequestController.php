@@ -59,7 +59,7 @@ class ListAssistanceRequestController extends Controller
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
-        $assistanceRequests = $this->listAssistanceRequestAction->execute($municipalId, $filters);
+        $assistanceRequests = $this->listAssistanceRequestAction->execute($municipalId, $filters, includePaymentReferences: true);
 
         // Assistance-type dropdown for the filter bar.
         // Intentionally includes inactive types so admins can still filter

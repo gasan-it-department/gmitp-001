@@ -35,6 +35,12 @@ class AssistanceRequestListResource extends JsonResource
             // ── Identification ───────────────────────────────────────────────
             'id' => $this->id,
             'transaction_number' => $this->transaction_number,
+            'matching_payment_references' => $this->when(
+                $this->relationLoaded('disbursements')
+                    && $request->user()?->can('action_center.access')
+                    && $request->user()?->can('action_center.requests.view'),
+                fn () => AssistanceDisbursementReferenceResource::collection($this->disbursements),
+            ),
 
             // ── Workflow state ───────────────────────────────────────────────
             // Raw status string; frontend handles label/colour mapping for i18n.
