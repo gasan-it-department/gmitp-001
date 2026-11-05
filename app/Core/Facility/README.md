@@ -4,6 +4,8 @@ Municipality-scoped facilities with recurring weekly hours, calendar-date overri
 
 ## Enable the module
 
+The initial schema uses one migration per table. Timestamps create them in this dependency order: `facilities`, `facility_weekly_days`, `facility_weekly_periods`, `facility_schedule_exceptions`, then `facility_exception_periods`. Rollback runs in reverse order, removing children before parents.
+
 Run against the intended application database during deployment:
 
 ```sh
