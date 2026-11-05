@@ -27,6 +27,7 @@ require __DIR__ . '/department.php';
 require __DIR__ . '/tourism.php';
 require __DIR__ . '/announcement.php';
 require __DIR__ . '/event.php';
+require __DIR__ . '/facility.php';
 
 
 

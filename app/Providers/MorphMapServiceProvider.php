@@ -81,6 +81,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'department' => Department::class,
             'announcement' => Announcement::class,
             'event' => Event::class,
+            'facility' => \App\Core\Facility\Models\Facility::class,
             'municipality' => Municipality::class,
             'municipality_settings' => MunicipalitySettings::class,
             'official' => Official::class,

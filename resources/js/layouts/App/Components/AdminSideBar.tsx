@@ -1,4 +1,5 @@
 import ShowGoodsRecipientsController from '@/actions/App/External/Web/Controllers/GoodsDistribution/ShowGoodsRecipientsController';
+import Houses from '@/components/icons/Houses';
 import { Button } from '@/components/ui/button';
 import {
     Sidebar,
@@ -34,6 +35,7 @@ import { router, usePage } from '@inertiajs/react';
 import {
     Binoculars,
     Boxes,
+    Building2,
     CalendarDays,
     CalendarRange,
     ChartNoAxesCombined,
@@ -282,6 +284,18 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: procurement.admin.page.url({ municipality: currentMunicipality.slug }),
                     icon: ScrollText,
                     permission: 'public_information.access',
+                },
+            ],
+        },
+        {
+            title: 'FACILITIES',
+            icon: Building2,
+            items: [
+                {
+                    title: 'Public Facilities',
+                    url: `/${currentMunicipality.slug}/admin/facility`,
+                    icon: Houses,
+                    permission: 'facility.view',
                 },
             ],
         },

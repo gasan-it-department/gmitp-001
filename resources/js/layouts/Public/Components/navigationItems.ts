@@ -40,6 +40,12 @@ export const useNavigation = (): NavigationItem[] => [
     id: "government"
   },
   {
+    title: "Facilities",
+    route: ({ municipality }) => ({ url: `/${municipality}/facility`, method: 'get' }),
+    icon: Landmark,
+    id: "facilities"
+  },
+  {
     title: "Transparency",
     route: transparency.index,
     icon: ShieldCheck,

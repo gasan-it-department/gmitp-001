@@ -40,9 +40,11 @@ beforeEach(function () {
         $table->softDeletes();
         $table->timestamps();
     });
+    (require database_path('migrations/2026_11_04_000001_create_facility_tables.php'))->up();
 });
 
 afterEach(function () {
+    (require database_path('migrations/2026_11_04_000001_create_facility_tables.php'))->down();
     Schema::dropIfExists('events');
     Schema::dropIfExists('announcements');
     Schema::dropIfExists('municipalities');
@@ -54,6 +56,8 @@ it('lists active municipality pages and only published public content', function
     $publishedAnnouncementId = (string) Str::ulid();
     $draftAnnouncementId = (string) Str::ulid();
     $publishedEventId = (string) Str::ulid();
+    $publishedFacilityId = (string) Str::ulid();
+    $draftFacilityId = (string) Str::ulid();
 
     DB::table('municipalities')->insert([
         municipalityRow($gasanId, 'Gasan', 'gasan-4905', '4905', true),
@@ -66,6 +70,9 @@ it('lists active municipality pages and only published public content', function
     ]);
 
     DB::table('events')->insert(eventRow($publishedEventId, $gasanId, true));
+    foreach ([$publishedFacilityId => true, $draftFacilityId => false] as $id => $published) {
+        DB::table('facilities')->insert(['id' => $id, 'municipal_id' => $gasanId, 'name' => 'Park', 'type' => 'park', 'is_published' => $published, 'created_at' => now(), 'updated_at' => now()]);
+    }
 
     $response = $this->get(route('sitemap'));
 
@@ -77,6 +84,9 @@ it('lists active municipality pages and only published public content', function
         ->assertSee(route('feedback.create', ['municipality' => 'gasan-4905']), false)
         ->assertSee(route('announcement.show', ['municipality' => 'gasan-4905', 'announcement' => $publishedAnnouncementId]), false)
         ->assertSee(route('event.show', ['municipality' => 'gasan-4905', 'event' => $publishedEventId]), false)
+        ->assertSee(route('facility.index', ['municipality' => 'gasan-4905']), false)
+        ->assertSee(route('facility.show', ['municipality' => 'gasan-4905', 'facility' => $publishedFacilityId]), false)
+        ->assertDontSee($draftFacilityId, false)
         ->assertDontSee('inactive-0000', false)
         ->assertDontSee($draftAnnouncementId, false);
 });

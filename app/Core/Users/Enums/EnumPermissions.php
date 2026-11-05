@@ -95,6 +95,13 @@ enum EnumPermissions: string
     // department
     case DEPARTMENT_ACCESS = 'department.access';
 
+    // Public facilities and operating hours.
+    case FACILITY_ACCESS = 'facility.access';
+    case FACILITY_VIEW = 'facility.view';
+    case FACILITY_MANAGE = 'facility.manage';
+    case FACILITY_PUBLISH = 'facility.publish';
+    case FACILITY_DELETE = 'facility.delete';
+
     // --- Reserved for delegation (NOT seeded yet) -------------------------
     // Uncomment + add labels + re-seed when you let municipal admins manage
     // other admins within their own municipality. CreateAdminUseCase already
@@ -155,6 +162,11 @@ enum EnumPermissions: string
             self::CEMETERY_DECEDENTS_DOCUMENTS_VIEW => 'Cemetery - View Documents',
             self::GOVERNMENT_ACCESS => 'Government Management',
             self::DEPARTMENT_ACCESS => 'Department Management',
+            self::FACILITY_ACCESS => 'Public Facilities',
+            self::FACILITY_VIEW => 'Facilities - View',
+            self::FACILITY_MANAGE => 'Facilities - Manage Details and Schedules',
+            self::FACILITY_PUBLISH => 'Facilities - Publish',
+            self::FACILITY_DELETE => 'Facilities - Delete',
         };
     }
 
@@ -209,6 +221,11 @@ enum EnumPermissions: string
             self::CEMETERY_DECEDENTS_DOCUMENTS_VIEW => EnumPermissionModule::CEMETERY,
             self::GOVERNMENT_ACCESS => EnumPermissionModule::GOVERNMENT,
             self::DEPARTMENT_ACCESS => EnumPermissionModule::DEPARTMENT,
+            self::FACILITY_ACCESS,
+            self::FACILITY_VIEW,
+            self::FACILITY_MANAGE,
+            self::FACILITY_PUBLISH,
+            self::FACILITY_DELETE => EnumPermissionModule::FACILITY,
         };
     }
 
@@ -225,6 +242,8 @@ enum EnumPermissions: string
     public function dependencies(): array
     {
         return match ($this) {
+            self::FACILITY_VIEW => [self::FACILITY_ACCESS->value],
+            self::FACILITY_MANAGE, self::FACILITY_PUBLISH, self::FACILITY_DELETE => [self::FACILITY_ACCESS->value, self::FACILITY_VIEW->value],
             self::GOODS_DISTRIBUTION_INVENTORY_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
             self::GOODS_DISTRIBUTION_REQUESTS_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
             self::GOODS_DISTRIBUTION_BULK_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
