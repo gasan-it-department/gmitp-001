@@ -54,7 +54,7 @@ class UpdateAssistanceTypeRequest extends FormRequest
                 'nullable',
                 'numeric',
                 'min:0',
-                'max:50000',
+                'max:150000',
             ],
             'cooldown_months' => [
                 'required',
