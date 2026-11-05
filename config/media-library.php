@@ -92,6 +92,7 @@ return [
      * Here you can specify which path generator should be used for the given class.
      */
     'custom_path_generators' => [
+        \App\Core\Facility\Models\Facility::class => \App\External\Documents\Facility\MediaLibrary\FacilityPathGenerator::class,
         \App\Core\ActionCenter\Models\AssistanceRequest::class => \App\External\Documents\ActionCenter\MediaLibrary\ActionCenterPathGenerator::class,
         \App\Core\GoodsDistribution\Models\DistributionRequest::class => \App\External\Documents\GoodsDistribution\MediaLibrary\GoodsDistributionPathGenerator::class,
         \App\Core\GoodsDistribution\Models\BulkDispatch::class => \App\External\Documents\GoodsDistribution\MediaLibrary\GoodsDistributionPathGenerator::class,

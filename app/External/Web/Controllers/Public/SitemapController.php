@@ -4,6 +4,7 @@ namespace App\External\Web\Controllers\Public;
 
 use App\Core\Announcement\Models\Announcement;
 use App\Core\Event\Models\Event;
+use App\Core\Facility\Models\Facility;
 use App\Core\Municipality\Models\Municipality;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
@@ -23,6 +24,7 @@ class SitemapController extends Controller
         'transparency.index',
         'announcement.index',
         'event.index',
+        'facility.index',
         'feedback.create',
     ];
 
@@ -46,6 +48,7 @@ class SitemapController extends Controller
 
         $this->appendAnnouncements($urls, $municipalities);
         $this->appendEvents($urls, $municipalities);
+        $this->appendFacilities($urls, $municipalities);
 
         return response()
             ->view('sitemap', ['urls' => $urls])
@@ -116,5 +119,14 @@ class SitemapController extends Controller
     private function entry(string $location, ?string $lastModified = null): array
     {
         return ['loc' => $location, 'lastmod' => $lastModified];
+    }
+
+    private function appendFacilities(Collection $urls, Collection $municipalities): void
+    {
+        $slugs = $municipalities->pluck('slug', 'id');
+        Facility::query()->whereIn('municipal_id', $slugs->keys())->where('is_published', true)
+            ->orderBy('id')->get(['id', 'municipal_id', 'updated_at'])->each(function (Facility $facility) use ($urls, $slugs): void {
+                $urls->push($this->entry(route('facility.show', ['municipality' => $slugs->get($facility->municipal_id), 'facility' => $facility->id]), $facility->updated_at?->toDateString()));
+            });
     }
 }

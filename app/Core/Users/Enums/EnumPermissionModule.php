@@ -18,6 +18,7 @@ enum EnumPermissionModule: string
     case CEMETERY = 'cemetery';
     case GOVERNMENT = 'government';
     case DEPARTMENT = 'department';
+    case FACILITY = 'facility';
 
     public function label(): string
     {
@@ -36,6 +37,7 @@ enum EnumPermissionModule: string
             self::CEMETERY => 'Cemetery Management',
             self::GOVERNMENT => 'Government Management',
             self::DEPARTMENT => 'Department Management',
+            self::FACILITY => 'Public Facilities',
         };
     }
 
@@ -53,6 +55,7 @@ enum EnumPermissionModule: string
             self::TOURISM => 80,
             self::GOVERNMENT => 90,
             self::DEPARTMENT => 100,
+            self::FACILITY => 105,
             self::MUNICIPALITY_SETTINGS => 110,
             self::USERS => 120,
             self::WEDDING => 130,
