@@ -545,6 +545,34 @@ it('does not expose facility mutations through the mobile API', function () {
     expect($this->facility->fresh()->trashed())->toBeFalse();
 });
 
+it('rolls back the separate facility migrations in reverse dependency order and recreates them', function () {
+    facilityTestWeek($this->facility);
+    facilityTestException($this->facility, ['notice_type' => 'special_hours', 'is_closed' => false,
+        'periods' => [['opening_minute' => 600, 'closing_minute' => 720]]]);
+
+    $tables = ['facilities', 'facility_weekly_days', 'facility_weekly_periods', 'facility_schedule_exceptions', 'facility_exception_periods'];
+    $paths = app('migrator')->getMigrationFiles([database_path('migrations')]);
+    $paths = array_filter($paths, fn ($path) => in_array(basename($path), array_map(
+        fn ($table, $index) => '2026_11_04_00000'.($index + 1).'_create_'.$table.'_table.php', $tables, array_keys($tables),
+    ), true));
+    expect(count($paths))->toBe(5);
+
+    foreach (array_reverse($paths) as $path) {
+        (require $path)->down();
+    }
+    foreach ($tables as $table) {
+        expect(Illuminate\Support\Facades\Schema::hasTable($table))->toBeFalse();
+    }
+
+    foreach ($paths as $path) {
+        (require $path)->up();
+    }
+    foreach ($tables as $table) {
+        expect(Illuminate\Support\Facades\Schema::hasTable($table))->toBeTrue();
+    }
+    expect(DB::select('PRAGMA foreign_key_check'))->toBe([]);
+});
+
 it('does not offer another municipality barangays when the current municipality has no PSGC link', function () {
     facilityTestAddressCatalogue($this->gasan, $this->boac);
     $this->gasan->update(['psgc_municipal_id' => null]);
