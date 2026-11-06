@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Shared\Aga\Contracts\AgaNotificationClientInterface;
+use App\Shared\Aga\Services\AgaNotificationClient;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Services\IdGenerator;
 use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Support\ServiceProvider;
 
-use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
-use App\Shared\IdGenerator\Services\IdGenerator;
 class SharedServiceProvider extends ServiceProvider
 {
     /**
@@ -14,6 +16,7 @@ class SharedServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(AgaNotificationClientInterface::class, AgaNotificationClient::class);
         $this->app->bind(IdGeneratorInterface::class, IdGenerator::class);
 
         $this->app->singleton(PhoneFormatterService::class, function ($app) {

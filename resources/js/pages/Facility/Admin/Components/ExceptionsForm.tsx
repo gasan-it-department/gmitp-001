@@ -6,17 +6,22 @@ import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import FormErrors from '../../Components/FormErrors';
 import PeriodEditor from '../../Components/PeriodEditor';
+import FacilityNotificationControl, { notificationHours, NotificationOptions } from './FacilityNotificationControl';
 
 function ExceptionEditor({
     facility,
     slug,
     types,
+    notificationOptions,
+    municipalityName,
     exception,
     cancel,
 }: {
     facility: AdminFacility;
     slug: string;
     types: Option[];
+    notificationOptions: NotificationOptions;
+    municipalityName: string;
     exception: ScheduleException | null;
     cancel: () => void;
 }) {
@@ -27,13 +32,19 @@ function ExceptionEditor({
         is_closed: exception?.is_closed ?? true,
         public_notice: exception?.public_notice ?? '',
         periods: exception?.periods ?? [],
+        notify_mobile: false as boolean,
     });
+    const notify = form.data.notify_mobile && facility.is_published && notificationOptions.available;
+    const labels: Record<string, string> = { cancelled: 'Cancelled', closed: 'Closed', special_hours: 'Special hours', delayed: 'Delayed opening' };
+    const end = form.data.end_date || form.data.exception_date;
+    const dates = end === form.data.exception_date ? `Date: ${form.data.exception_date}` : `Dates: ${form.data.exception_date} to ${end}`;
+    const message = `${dates}. ${form.data.public_notice.trim()}${form.data.is_closed ? '' : ` Hours: ${notificationHours(form.data.periods)} (Philippine time).`}`;
     return (
         <form
             className="space-y-4 rounded-lg border bg-slate-50 p-4"
             onSubmit={(e) => {
                 e.preventDefault();
-                form.transform((data) => ({ ...data, revision: facility.revision }));
+                form.transform((data) => ({ ...data, notify_mobile: notify, revision: facility.revision }));
                 const options = {
                     headers: { 'X-Municipality-Slug': slug },
                     preserveScroll: true,
@@ -119,10 +130,26 @@ function ExceptionEditor({
                         This facility has an active hold. Revised hours do not clear it; use Resume schedule when ready.
                     </p>
                 )}
+                <FacilityNotificationControl
+                    options={notificationOptions}
+                    published={facility.is_published}
+                    checked={form.data.notify_mobile}
+                    onChange={(checked) => form.setData('notify_mobile', checked)}
+                    title={`${municipalityName} - ${facility.name}: ${labels[form.data.notice_type]}`}
+                    message={message}
+                />
             </fieldset>
             <FormErrors errors={form.errors} />
             <div className="flex gap-2">
-                <Button disabled={form.processing}>{form.processing ? 'Saving…' : 'Save schedule update'}</Button>
+                <Button disabled={form.processing}>
+                    {form.processing
+                        ? 'Saving…'
+                        : notify
+                          ? notificationOptions.schema === 'test'
+                              ? 'Save and send test'
+                              : 'Save and notify'
+                          : 'Save schedule update'}
+                </Button>
                 {exception && (
                     <Button type="button" variant="outline" onClick={cancel}>
                         Cancel edit
@@ -137,11 +164,15 @@ export default function ExceptionsForm({
     facility,
     slug,
     types,
+    notificationOptions,
+    municipalityName,
     editable,
 }: {
     facility: AdminFacility;
     slug: string;
     types: Option[];
+    notificationOptions: NotificationOptions;
+    municipalityName: string;
     editable: boolean;
 }) {
     const [editing, setEditing] = useState<ScheduleException | null>(null);
@@ -158,6 +189,8 @@ export default function ExceptionsForm({
                     facility={facility}
                     slug={slug}
                     types={types}
+                    notificationOptions={notificationOptions}
+                    municipalityName={municipalityName}
                     exception={editing}
                     cancel={() => setEditing(null)}
                 />

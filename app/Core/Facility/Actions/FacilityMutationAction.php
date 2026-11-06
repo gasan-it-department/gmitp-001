@@ -9,9 +9,9 @@ use Illuminate\Validation\ValidationException;
 
 abstract class FacilityMutationAction
 {
-    protected function mutate(string $id, FacilityMutationDto $dto, callable $operation): Facility
+    protected function mutate(string $id, FacilityMutationDto $dto, callable $operation, ?callable $afterSave = null): Facility
     {
-        return DB::transaction(function () use ($id, $dto, $operation) {
+        return DB::transaction(function () use ($id, $dto, $operation, $afterSave) {
             $facility = Facility::query()->where('municipal_id', $dto->municipalId)->whereKey($id)->lockForUpdate()->firstOrFail();
             if ($facility->revision !== $dto->revision) {
                 throw ValidationException::withMessages(['revision' => 'This facility changed while you were editing. Reload the page and review the latest information.']);
@@ -19,6 +19,9 @@ abstract class FacilityMutationAction
             $operation($facility);
             $facility->revision++;
             $facility->save();
+            if ($afterSave) {
+                $afterSave($facility);
+            }
 
             return $facility;
         });

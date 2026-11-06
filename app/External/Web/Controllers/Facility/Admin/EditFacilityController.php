@@ -4,9 +4,10 @@ namespace App\External\Web\Controllers\Facility\Admin;
 
 use App\Core\Facility\Actions\GetFacilityAddressOptionsAction;
 use App\Core\Facility\Actions\GetFacilityDetailsAction;
-use App\Core\Facility\Enums\FacilityType;
-use App\Core\Facility\Enums\FacilityOperatingStatus;
 use App\Core\Facility\Enums\FacilityNoticeType;
+use App\Core\Facility\Enums\FacilityOperatingStatus;
+use App\Core\Facility\Enums\FacilityType;
+use App\Core\Facility\Services\FacilityNotificationService;
 use App\External\Api\Resources\Facility\AdminFacilityDetailsResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
@@ -17,6 +18,7 @@ class EditFacilityController extends Controller
     public function __construct(
         private GetFacilityDetailsAction $action,
         private GetFacilityAddressOptionsAction $addresses,
+        private FacilityNotificationService $notifications,
     ) {}
 
     public function __invoke(string $municipality, string $facility): Response
@@ -25,6 +27,7 @@ class EditFacilityController extends Controller
             'facility' => (new AdminFacilityDetailsResource($this->action->execute(app('municipal_id'), $facility)))->resolve(),
             'types' => FacilityType::toOptions(), 'statuses' => FacilityOperatingStatus::toOptions(), 'notice_types' => FacilityNoticeType::toOptions(),
             'address_barangays' => $this->addresses->execute(app('municipal_id')),
+            'notification_options' => $this->notifications->options(),
         ]);
     }
 }

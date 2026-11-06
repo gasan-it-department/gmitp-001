@@ -21,6 +21,9 @@ class Facility extends Model implements HasMedia
 {
     use HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
+    /** Request-only delivery feedback; never persisted or exposed by public resources. */
+    public string $notificationOutcome = 'not_requested';
+
     protected $attributes = ['is_published' => false, 'operating_status' => 'following_schedule', 'revision' => 0];
 
     protected $fillable = ['municipal_id', 'name', 'type', 'description', 'location_name', 'address',

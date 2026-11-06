@@ -6,6 +6,7 @@ use App\Core\Facility\Dto\FacilityOperatingStatusDto;
 use App\Core\Facility\Enums\FacilityOperatingStatus;
 use App\Core\Facility\Models\Facility;
 use App\Core\Facility\Services\FacilityExceptionWriter;
+use App\Core\Facility\Services\FacilityNotificationService;
 use App\Core\Facility\Services\FacilityScheduleResolver;
 use App\Core\Facility\Services\FacilityScheduleValidator;
 use Carbon\CarbonImmutable;
@@ -13,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class SetFacilityOperatingStatusAction extends FacilityMutationAction
 {
-    public function __construct(private FacilityScheduleValidator $validator, private FacilityExceptionWriter $writer) {}
+    public function __construct(private FacilityScheduleValidator $validator, private FacilityExceptionWriter $writer, private FacilityNotificationService $notifications) {}
 
     public function execute(string $id, FacilityOperatingStatusDto $dto): Facility
     {
@@ -25,7 +26,9 @@ class SetFacilityOperatingStatusAction extends FacilityMutationAction
             throw ValidationException::withMessages(['today_exception' => 'Revised hours can only be applied while resuming the schedule.']);
         }
 
-        return $this->mutate($id, $dto, function (Facility $facility) use ($dto, $resuming) {
+        $changed = false;
+
+        return $this->mutate($id, $dto, function (Facility $facility) use ($dto, $resuming, &$changed) {
             if ($dto->todayException) {
                 $data = $this->validator->exception($dto->todayException);
                 $today = CarbonImmutable::now(FacilityScheduleResolver::TIMEZONE)->toDateString();
@@ -35,10 +38,14 @@ class SetFacilityOperatingStatusAction extends FacilityMutationAction
                 $existing = $facility->exceptions()->where('municipal_id', $facility->municipal_id)->where('exception_date', $today)->first();
                 $before = $existing?->load('periods')->toArray() ?? [];
                 $after = $this->writer->write($facility, $data, $existing);
+                $changed = $this->notifications->scheduleChanged($before, $after->toArray());
                 $this->audit($facility, 'Revised hours saved while resuming', $before, $after->toArray());
             }
             $facility->fill(['operating_status' => $dto->status, 'operating_notice' => $resuming ? null : trim($dto->notice),
                 'expected_reopens_at' => $resuming || $dto->status === FacilityOperatingStatus::PERMANENTLY_CLOSED ? null : $dto->expectedReopensAt]);
+            $changed = $changed || $facility->isDirty(['operating_status', 'operating_notice', 'expected_reopens_at']);
+        }, function (Facility $facility) use ($dto, &$changed) {
+            $this->notifications->operatingStatus($facility, $changed, $dto);
         });
     }
 }

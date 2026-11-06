@@ -8,6 +8,6 @@ readonly class UpdateFacilityExceptionDto extends FacilityExceptionDto
 {
     public static function fromRequest(FormRequest $request, string $municipalId): self
     {
-        return new self($municipalId, $request->integer('revision'), $request->safe()->except(['revision']));
+        return new self($municipalId, $request->integer('revision'), $request->safe()->except(['revision', 'notify_mobile']), $request->boolean('notify_mobile'));
     }
 }

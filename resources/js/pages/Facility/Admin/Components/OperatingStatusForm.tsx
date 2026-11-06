@@ -5,16 +5,21 @@ import { AdminFacility, defaultPeriod, Option } from '@/Core/Types/Facility/Faci
 import { useForm } from '@inertiajs/react';
 import FormErrors from '../../Components/FormErrors';
 import PeriodEditor from '../../Components/PeriodEditor';
+import FacilityNotificationControl, { notificationHours, NotificationOptions } from './FacilityNotificationControl';
 
 export default function OperatingStatusForm({
     facility,
     slug,
     statuses,
+    notificationOptions,
+    municipalityName,
     editable,
 }: {
     facility: AdminFacility;
     slug: string;
     statuses: Option[];
+    notificationOptions: NotificationOptions;
+    municipalityName: string;
     editable: boolean;
 }) {
     const form = useForm({
@@ -22,10 +27,21 @@ export default function OperatingStatusForm({
         operating_notice: facility.operating_notice ?? '',
         expected_reopens_at: facility.expected_reopens_at_input ?? '',
         revise_today: false as boolean,
+        notify_mobile: false as boolean,
         resume_notice: '',
         periods: [defaultPeriod()],
     });
     const resuming = form.data.operating_status === 'following_schedule';
+    const notify = form.data.notify_mobile && facility.is_published && notificationOptions.available;
+    const label = resuming ? 'Schedule resumed' : statuses.find((status) => status.value === form.data.operating_status)?.label;
+    let message = resuming
+        ? 'The operating hold has been cleared. Check the latest facility hours before visiting.'
+        : form.data.operating_notice.trim();
+    if (resuming && form.data.revise_today) {
+        message += ` Revised hours today: ${notificationHours(form.data.periods)} (Philippine time). ${form.data.resume_notice.trim()}`;
+    } else if (!resuming && form.data.operating_status !== 'permanently_closed' && form.data.expected_reopens_at) {
+        message += ` Expected reopening: ${form.data.expected_reopens_at.replace('T', ' ').slice(0, 16)} (Philippine time; estimate only).`;
+    }
     return (
         <section className="rounded-xl border bg-white p-5 sm:p-6">
             <h2 className="text-lg font-semibold">Operating status</h2>
@@ -38,6 +54,7 @@ export default function OperatingStatusForm({
                     e.preventDefault();
                     form.transform((data) => ({
                         revision: facility.revision,
+                        notify_mobile: notify,
                         operating_status: data.operating_status,
                         operating_notice: resuming ? null : data.operating_notice,
                         expected_reopens_at: resuming || data.operating_status === 'permanently_closed' ? null : data.expected_reopens_at || null,
@@ -55,7 +72,9 @@ export default function OperatingStatusForm({
                     form.patch(`/api/facility/${facility.id}/operating-status`, {
                         headers: { 'X-Municipality-Slug': slug },
                         preserveScroll: true,
-                        onSuccess: () => form.setData('revise_today', false),
+                        onSuccess: () => {
+                            form.setData((data) => ({ ...data, revise_today: false, notify_mobile: false }));
+                        },
                     });
                 }}
             >
@@ -133,15 +152,27 @@ export default function OperatingStatusForm({
                             )}
                         </>
                     )}
+                    <FacilityNotificationControl
+                        options={notificationOptions}
+                        published={facility.is_published}
+                        checked={form.data.notify_mobile}
+                        onChange={(checked) => form.setData('notify_mobile', checked)}
+                        title={`${municipalityName} - ${facility.name}: ${label}`}
+                        message={message}
+                    />
                 </fieldset>
                 <FormErrors errors={form.errors} />
                 {editable && (
                     <Button disabled={form.processing}>
                         {form.processing
                             ? 'Saving…'
-                            : resuming && facility.operating_status !== 'following_schedule'
-                              ? 'Resume schedule'
-                              : 'Save operating status'}
+                            : notify
+                              ? notificationOptions.schema === 'test'
+                                  ? 'Save and send test'
+                                  : 'Save and notify'
+                              : resuming && facility.operating_status !== 'following_schedule'
+                                ? 'Resume schedule'
+                                : 'Save operating status'}
                     </Button>
                 )}
             </form>
