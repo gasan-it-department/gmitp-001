@@ -5,6 +5,7 @@ namespace App\Core\Facility\Actions;
 use App\Core\Facility\Dto\FacilityExceptionDto;
 use App\Core\Facility\Models\Facility;
 use App\Core\Facility\Services\FacilityExceptionWriter;
+use App\Core\Facility\Services\FacilityNotificationService;
 use App\Core\Facility\Services\FacilityScheduleResolver;
 use App\Core\Facility\Services\FacilityScheduleValidator;
 use Carbon\CarbonImmutable;
@@ -12,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class SaveFacilityExceptionAction extends FacilityMutationAction
 {
-    public function __construct(private FacilityScheduleValidator $validator, private FacilityExceptionWriter $writer) {}
+    public function __construct(private FacilityScheduleValidator $validator, private FacilityExceptionWriter $writer, private FacilityNotificationService $notifications) {}
 
     public function execute(string $id, FacilityExceptionDto $dto, ?string $exceptionId = null): Facility
     {
@@ -23,7 +24,9 @@ class SaveFacilityExceptionAction extends FacilityMutationAction
             throw ValidationException::withMessages(['end_date' => 'Use at most 366 dates when adding, and a single date when editing.']);
         }
 
-        return $this->mutate($id, $dto, function (Facility $facility) use ($data, $start, $end, $exceptionId) {
+        $changed = false;
+
+        return $this->mutate($id, $dto, function (Facility $facility) use ($data, $start, $end, $exceptionId, &$changed) {
             $exception = $exceptionId ? $facility->exceptions()->where('municipal_id', $facility->municipal_id)->whereKey($exceptionId)->firstOrFail() : null;
             $conflicts = $facility->exceptions()->where('municipal_id', $facility->municipal_id)
                 ->whereBetween('exception_date', [$start->toDateString(), $end->toDateString()])
@@ -36,7 +39,10 @@ class SaveFacilityExceptionAction extends FacilityMutationAction
             foreach ($start->range($end) as $date) {
                 $after[] = $this->writer->write($facility, [...$data, 'exception_date' => $date->toDateString()], $exception)->toArray();
             }
+            $changed = ! $exceptionId || $this->notifications->scheduleChanged($before, $after[0]);
             $this->audit($facility, $exceptionId ? 'Schedule exception updated' : 'Schedule exception added', $before, ['exceptions' => $after]);
+        }, function (Facility $facility) use ($dto, &$changed, $data) {
+            $this->notifications->schedule($facility, $dto->notifyMobile, $changed, $data);
         });
     }
 }

@@ -65,4 +65,15 @@ return [
         'secret_key' => env('TURNSTILE_SECRET_KEY'),
     ],
 
+    'aga_notifications' => [
+        'enabled' => env('AGA_NOTIFICATION_ENABLED', false),
+        'url' => env('AGA_NOTIFICATION_URL', env('SUPABASE_URL')
+            ? rtrim(env('SUPABASE_URL'), '/').'/functions/v1/send-external-notification'
+            : null),
+        'secret' => env('AGA_NOTIFICATION_SECRET', env('SUPABASE_LARAVEL_EDGE_SECRET')),
+        'schema' => env('AGA_NOTIFICATION_SCHEMA', 'test'),
+        'timeout' => env('AGA_NOTIFICATION_TIMEOUT', 10),
+        'facility_event_type' => env('AGA_FACILITY_NOTIFICATION_EVENT_TYPE'),
+    ],
+
 ];

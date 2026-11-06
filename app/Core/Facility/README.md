@@ -61,7 +61,7 @@ Listing supports optional `search`, `type`, `page` and `per_page`. Page size def
 
 `availability` uses the same calculation as the website: `timezone`, `date`, `computed_at`, `next_refresh_at`, `is_open`, `status`, `label`, `closes_at`, `next_opens_at`, `expected_reopens_at`, `today_periods`, `notice`, `notice_type`. Timestamps have explicit offsets; availability and `updated_at` use Asia/Manila. Weekdays are ISO Monday 1–Sunday 7. Periods use integer `opening_minute` and `closing_minute`; 1440 is the end of the day.
 
-The app should refetch at `next_refresh_at` while visible and when returning to the screen. A facility's `updated_at` tracks saved changes, not clock-based opening/closing transitions. Responses use `Cache-Control: no-store`; offline copies must be clearly identified as last-known information. Delay estimates never automatically clear an operational hold. Signed image URLs expire after 15 minutes; refetch to obtain a new URL. Notification delivery remains deferred.
+The app should refetch at `next_refresh_at` while visible and when returning to the screen. A facility's `updated_at` tracks saved changes, not clock-based opening/closing transitions. Responses use `Cache-Control: no-store`; offline copies must be clearly identified as last-known information. Delay estimates never automatically clear an operational hold. Signed image URLs expire after 15 minutes; refetch to obtain a new URL. Optional notifications are described below.
 
 ## Architecture and verification
 
@@ -78,4 +78,14 @@ npm run build
 
 Feature tests use the real migrations on an isolated test database and cover timezone/boundary behavior, exception precedence, long closures, uncertain holds, publication, tenant foreign keys, conflicting/stale edits, slug-header requests, permissions and media paths.
 
-Mobile JSON reads reuse the Core actions and availability service. Notifications, Event/Announcement links and individual train departures remain deferred; operational notices are already structured data.
+Mobile JSON reads reuse the Core actions and availability service. Event/Announcement links and individual train departures remain deferred; operational notices are already structured data.
+
+## Optional AGA Mobile notifications
+
+Date-specific updates and operating-status saves have an unchecked notification option and a preview. It is available only for published facilities when shared AGA delivery is configured. The existing requests, DTOs and actions carry notify_mobile separately from saved schedule data. Unchanged, invalid, stale or foreign-municipality submissions never broadcast. A range produces one notification. Notifications target all eligible AGA devices, including other municipalities, with the facility and municipality in the title.
+
+Jobs dispatch after transaction commit using app/Shared/Aga. A delivery/queue failure does not undo the saved update. Feedback reports queued or skipped rather than promising delivery. Test mode is explicitly labelled; live schema is app_main_schema. No automatic broadcasts occur for ordinary opening-hour transitions, profile/weekly edits, publication or exception deletion.
+
+Delivery is disabled by default. AGA_FACILITY_NOTIFICATION_EVENT_TYPE is optional, as confirmed by the mobile developer. Omit it or leave it blank to send without event_type; it does not prevent enabling the checkbox. Keep AGA_NOTIFICATION_SCHEMA=test while verifying and use an asynchronous queue worker. See app/Shared/Aga/README.md for credentials, environment values, schema protection and retry limitations. No database migration is required.
+
+FacilityNotificationTest verifies opt-in requests, all-user payloads, date ranges, no-op detection, transaction timing/rollback, configuration guards and saved updates on dispatch failure using fake HTTP/queue integrations.
