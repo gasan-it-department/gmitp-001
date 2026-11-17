@@ -84,6 +84,8 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.household.address.update' => 'action_center.beneficiaries.correct',
         'actionCenter.household.members.admin-store' => 'action_center.beneficiaries.manage',
         'actionCenter.household.members.store-admin' => 'action_center.beneficiaries.manage',
+        'actionCenter.household.members.check' => 'action_center.beneficiaries.manage',
+        'actionCenter.household.members.check-beneficiary' => 'action_center.beneficiaries.manage',
         'actionCenter.household.beneficiaries.store' => 'action_center.beneficiaries.manage',
         'actionCenter.household.beneficiary-candidates.index' => 'action_center.beneficiaries.correct',
         'actionCenter.household.beneficiary-candidates.transfer-context' => 'action_center.beneficiaries.correct',

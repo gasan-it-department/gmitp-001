@@ -1,54 +1,87 @@
-# AGA Mobile — Facilities API integration guide
-Version: 1.0  
-Prepared: 5 November 2026  
-Audience: AGA Mobile application developer
+# AGA Mobile - Facilities API integration guide
 
-## 1. Integration scope and deployment
+Version: 2.0
+Updated: 10 November 2026
+Audience: AGA Mobile developer and any AI implementing the integration
 
-This API supplies public facility information to the mobile app. Facility administration remains on the web. The backend endpoints are implemented and tested; confirm deployment and the actual API host with the backend developer before connecting a production app.
+## 1. Required behavior: the API controls which cards exist
 
-Replace `https://YOUR-API-HOST` in every example with the deployed backend origin. This is a placeholder, not a working host. All sample names, IDs, schedules and notices below are illustrative.
+**Build every facility card from the facilities LIST response. The list is the source of truth for card membership, names, types, images and current availability.**
 
-Only published, non-deleted facilities in the selected municipality are returned. Published facilities remain visible during cancellations, delays and closures so citizens can read the notice. Park, playground and train ride records operate independently.
+Do not hard-code a Train, Park, Playground or any other facility card, name or ID and then use this API only to fill in its hours. The names and IDs in this document are examples, not records to seed into the mobile app.
 
-There are no mobile write endpoints or push notifications in this release. Public reads require no admin login or bearer token under the current API routes.
+Correct behavior:
 
-## 2. Required headers
+| Backend change | Next successful mobile list refresh |
+| --- | --- |
+| Publish a new facility | Add a card using the new API record |
+| Rename a facility | Update the existing card with the same id |
+| Unpublish a facility | Remove its card; do not leave a card with missing hours |
+| Delete a facility | Remove its card |
+| Close, cancel or delay a published facility | Keep its card and display the status and explanation |
+| Republish a facility | Show it again when it returns in the list |
+| Return an empty list | Show the empty state and remove previous cards for that list |
 
-Send these headers on every request, including requests to pagination links:
+Publication and operating status are different. A published Train with status cancelled is still public and must stay visible. An unpublished Train is absent from the list and must disappear after refresh. A Park and a Train in the same area are independent facility records.
+
+The public response does not contain an is_published field. The backend already filters publication. Do not add a client filter that expects item.is_published.
+
+Use id as the stable UI key and detail identifier. Do not identify records by name, array position, or type; names can change and several facilities can share a type.
+
+A static Facilities navigation item or static type filter is fine. A static inventory of facility cards is not. A decorative placeholder image must never create a facility card.
+
+### Example of the reported bug
+
+Initial successful list: Train + Park. Render two cards.
+
+After the admin unpublishes Train, the next complete list contains only Park. Replace the displayed collection with that result: render one Park card. Do not keep a built-in Train card, merge the response into an old map without deleting absent records, or continue polling only the known Train detail URL.
+
+The backend does not instantly remove an already rendered card on a phone. The app learns about changes through a fresh list request. See section 8 for polling, resume and pagination rules.
+
+## 2. Scope, environment and required headers
+
+These are public READ APIs. Facility administration stays on the web. Confirm the deployed backend origin and municipality slug with the backend developer before release.
+
+Replace https://YOUR-API-HOST with that environment's actual origin. Never ship this placeholder. Examples below were captured from isolated API fixtures with the clock fixed at 9 November 2026, 10:00 AM in Asia/Manila. They illustrate the contract, not current production data. api.example.invalid in response links is also an example origin.
+
+Send these headers on EVERY request, including detail requests and pagination:
 
 ```http
 Accept: application/json
 X-Municipality-Slug: gasan-4905
 ```
 
-Use the municipality slug already used by the app's Event and Announcement APIs. Do not send a numeric or ULID municipal_id as a replacement for the slug. The backend resolves and enforces municipality ownership.
+Use the municipality slug already used for the app's Events and Announcements integration. Do not replace it with a municipal_id. The backend resolves and enforces municipality ownership.
 
-GET requests have no JSON request body. The JSON examples in this document are response bodies.
+Public reads require no admin login or Bearer token under the current routes. Do not embed notification secrets, Supabase secrets or admin credentials in the mobile app.
 
-## 3. Endpoints
+GET requests have no JSON body. JSON shown here is the RESPONSE body.
 
-| Method | Path | Result |
+Keep development and production origins separate. Scope all list and detail caches by API origin/environment AND municipality. Never show a previous municipality's cards while a new municipality is loading.
+
+## 3. Endpoints, filters and facility types
+
+| Method | Path | Returns |
 | --- | --- | --- |
-| GET | /api/v1/facilities | Paginated public summaries |
-| GET | /api/v1/facilities/{facility} | Details for one published facility |
+| GET | /api/v1/facilities | Paginated summaries of published facilities |
+| GET | /api/v1/facilities/{facility} | Detail for one published facility |
 
-`{facility}` is the ULID returned in the list item's `id`. Treat it as an opaque string. Both endpoints return `Cache-Control: no-store`.
+Use the exact opaque id returned by the list for {facility}. Both endpoints send Cache-Control: no-store. Do not rely on a permanently cached HTTP response.
 
-### Listing query parameters
+### List query parameters
 
-| Parameter | Type | Default / constraint |
+| Parameter | Meaning | Constraint |
 | --- | --- | --- |
-| search | string | Optional; maximum 255 characters; searches name and location_name |
-| type | string | Optional; one of the facility type values below |
-| page | integer | Default 1; minimum 1 |
-| per_page | integer | Default 20; minimum 1, maximum 50 |
+| search | Search name and location_name | Optional string, maximum 255 characters |
+| type | Filter by type.value | Optional; one of the values below |
+| page | Page number | Integer, minimum 1; default 1 |
+| per_page | Page size | Integer 1-50; default 20 |
 
-Invalid parameter values return HTTP 422. A size above 50 is rejected, not silently capped by the request validator. Unknown parameters are not supported filters. In particular, `publication=draft` or `municipal_id=...` cannot expose drafts or change municipality ownership.
+The list is ordered by name, then id. Do not depend on a particular sample record being first. A page size of 50 does not guarantee that all facilities fit on one page.
 
-Valid facility types:
+Omit type to request all types. Do not send type=all, type=train or type=service_update. Invalid supported parameter values return HTTP 422; per_page above 50 is rejected. Unknown parameters are not supported filters; publication=draft and municipal_id cannot expose drafts or override municipality ownership.
 
-| Value | Label |
+| type.value | type.label |
 | --- | --- |
 | park | Park |
 | playground | Playground |
@@ -56,60 +89,180 @@ Valid facility types:
 | sports_facility | Sports facility |
 | other | Other |
 
-### Example requests
+A children's Train is a facility whose current classification may be amusement_ride. There is no special Train endpoint and no train enum value. The UI must support zero, one or many facilities of every type. Use type.value for filtering and type.label for display; support a neutral fallback for a future type.
 
-```sh
-curl "https://YOUR-API-HOST/api/v1/facilities?type=park&per_page=20&page=1" \
-  -H "Accept: application/json" \
-  -H "X-Municipality-Slug: gasan-4905"
+Examples:
+
+```http
+GET /api/v1/facilities?per_page=50
+GET /api/v1/facilities?type=amusement_ride&per_page=50
+GET /api/v1/facilities?search=park&per_page=20&page=1
+GET /api/v1/facilities/01m6znmr5zce56chk2sehq7c0b
 ```
 
-```sh
-curl "https://YOUR-API-HOST/api/v1/facilities/01ARZ3NDEKTSV4RRFFQ69G5FAV" \
-  -H "Accept: application/json" \
-  -H "X-Municipality-Slug: gasan-4905"
-```
+Preserve search, type, per_page and municipality headers across pagination. Use links.next or reconstruct a request to the configured trusted origin using the returned page/query. Do not follow a pagination URL to an arbitrary different host. Null links.next means the last page.
 
-The multiline commands use a POSIX shell. In PowerShell, use curl.exe and put the command on one line.
+## 4. List response: data creates the cards
 
-## 4. List response example
-
-This example has one matching facility. The park's operation is cancelled for today, while the record remains publicly visible.
+The following is one complete example page containing all five current types. In a real deployment, records, order, counts, times and notices will differ.
 
 ```json
 {
   "data": [
     {
-      "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "id": "01m6znmr5pv73h27qza1ecxmhx",
+      "name": "Children's Playground",
+      "type": {
+        "value": "playground",
+        "label": "Playground"
+      },
+      "location_name": "Municipal Plaza",
+      "address": "Plaza entrance, Pinggan",
+      "image_url": null,
+      "availability": {
+        "timezone": "Asia/Manila",
+        "date": "2026-11-09",
+        "computed_at": "2026-11-09T10:00:00+08:00",
+        "next_refresh_at": "2026-11-09T10:01:00+08:00",
+        "is_open": false,
+        "status": "closed",
+        "label": "Closed now",
+        "closes_at": null,
+        "next_opens_at": null,
+        "expected_reopens_at": null,
+        "today_periods": [],
+        "notice": null,
+        "notice_type": null
+      },
+      "updated_at": "2026-11-09T10:00:00+08:00"
+    },
+    {
+      "id": "01m6znmr5zce56chk2sehq7c0b",
+      "name": "Children's Train",
+      "type": {
+        "value": "amusement_ride",
+        "label": "Amusement ride"
+      },
+      "location_name": "Municipal Plaza",
+      "address": "Plaza entrance, Pinggan",
+      "image_url": null,
+      "availability": {
+        "timezone": "Asia/Manila",
+        "date": "2026-11-09",
+        "computed_at": "2026-11-09T10:00:00+08:00",
+        "next_refresh_at": "2026-11-09T10:01:00+08:00",
+        "is_open": false,
+        "status": "cancelled",
+        "label": "Cancelled today",
+        "closes_at": null,
+        "next_opens_at": "2026-11-10T13:00:00+08:00",
+        "expected_reopens_at": null,
+        "today_periods": [],
+        "notice": "Train rides are cancelled today due to maintenance.",
+        "notice_type": "cancelled"
+      },
+      "updated_at": "2026-11-09T10:00:00+08:00"
+    },
+    {
+      "id": "01m6znmr33fxga9jhhbsxnyy6a",
       "name": "Municipal Park",
       "type": {
         "value": "park",
         "label": "Park"
       },
       "location_name": "Municipal Plaza",
-      "address": "Beside the plaza entrance, Pinggan",
+      "address": "Plaza entrance, Pinggan",
       "image_url": null,
       "availability": {
         "timezone": "Asia/Manila",
-        "date": "2026-11-05",
-        "computed_at": "2026-11-05T15:00:00+08:00",
-        "next_refresh_at": "2026-11-05T15:01:00+08:00",
-        "is_open": false,
-        "status": "cancelled",
-        "label": "Cancelled today",
-        "closes_at": null,
-        "next_opens_at": "2026-11-06T06:00:00+08:00",
+        "date": "2026-11-09",
+        "computed_at": "2026-11-09T10:00:00+08:00",
+        "next_refresh_at": "2026-11-09T10:01:00+08:00",
+        "is_open": true,
+        "status": "open",
+        "label": "Open now",
+        "closes_at": "2026-11-09T17:00:00+08:00",
+        "next_opens_at": null,
         "expected_reopens_at": null,
-        "today_periods": [],
-        "notice": "Park operations are cancelled for the remainder of today due to heavy rain.",
-        "notice_type": "cancelled"
+        "today_periods": [
+          {
+            "opening_minute": 480,
+            "closing_minute": 1020
+          }
+        ],
+        "notice": null,
+        "notice_type": null
       },
-      "updated_at": "2026-11-05T15:00:00+08:00"
+      "updated_at": "2026-11-09T10:00:00+08:00"
+    },
+    {
+      "id": "01m6znmr85gc31tmqcf5hd2v0m",
+      "name": "Municipal Sports Court",
+      "type": {
+        "value": "sports_facility",
+        "label": "Sports facility"
+      },
+      "location_name": "Municipal Plaza",
+      "address": "Plaza entrance, Pinggan",
+      "image_url": null,
+      "availability": {
+        "timezone": "Asia/Manila",
+        "date": "2026-11-09",
+        "computed_at": "2026-11-09T10:00:00+08:00",
+        "next_refresh_at": "2026-11-09T10:01:00+08:00",
+        "is_open": false,
+        "status": "temporarily_closed",
+        "label": "Temporarily closed",
+        "closes_at": null,
+        "next_opens_at": null,
+        "expected_reopens_at": "2026-11-09T15:00:00+08:00",
+        "today_periods": [
+          {
+            "opening_minute": 480,
+            "closing_minute": 1020
+          }
+        ],
+        "notice": "Court repairs are ongoing.",
+        "notice_type": "temporarily_closed"
+      },
+      "updated_at": "2026-11-09T10:00:00+08:00"
+    },
+    {
+      "id": "01m6znmr8x43sat14bw6b8jpks",
+      "name": "Visitor Information Center",
+      "type": {
+        "value": "other",
+        "label": "Other"
+      },
+      "location_name": "Municipal Plaza",
+      "address": "Plaza entrance, Pinggan",
+      "image_url": null,
+      "availability": {
+        "timezone": "Asia/Manila",
+        "date": "2026-11-09",
+        "computed_at": "2026-11-09T10:00:00+08:00",
+        "next_refresh_at": "2026-11-09T10:01:00+08:00",
+        "is_open": true,
+        "status": "open",
+        "label": "Open now",
+        "closes_at": "2026-11-09T17:00:00+08:00",
+        "next_opens_at": null,
+        "expected_reopens_at": null,
+        "today_periods": [
+          {
+            "opening_minute": 480,
+            "closing_minute": 1020
+          }
+        ],
+        "notice": null,
+        "notice_type": null
+      },
+      "updated_at": "2026-11-09T10:00:00+08:00"
     }
   ],
   "links": {
-    "first": "https://YOUR-API-HOST/api/v1/facilities?page=1",
-    "last": "https://YOUR-API-HOST/api/v1/facilities?page=1",
+    "first": "https://api.example.invalid/api/v1/facilities?page=1",
+    "last": "https://api.example.invalid/api/v1/facilities?page=1",
     "prev": null,
     "next": null
   },
@@ -121,67 +274,131 @@ This example has one matching facility. The park's operation is cancelled for to
       {
         "url": null,
         "label": "&laquo; Previous",
+        "page": null,
         "active": false
       },
       {
-        "url": "https://YOUR-API-HOST/api/v1/facilities?page=1",
+        "url": "https://api.example.invalid/api/v1/facilities?page=1",
         "label": "1",
+        "page": 1,
         "active": true
       },
       {
         "url": null,
         "label": "Next &raquo;",
+        "page": null,
         "active": false
       }
     ],
-    "path": "https://YOUR-API-HOST/api/v1/facilities",
+    "path": "https://api.example.invalid/api/v1/facilities",
     "per_page": 20,
-    "to": 1,
-    "total": 1
+    "to": 5,
+    "total": 5
   }
 }
 ```
 
-Use `data` for list cards. Follow `links.next` until it is null, or use `meta.current_page` and `meta.last_page`. Send the same municipality header on every page. Pagination links preserve the submitted query parameters. The host and links above are illustrative.
+Read the collection from response.data, not the root JSON object. links and meta are pagination information and are not facility cards.
 
-No matches produce an empty `data` array. Nullable pagination range values such as `from` and `to` should be handled. Laravel pagination labels may contain HTML entities; use native pagination controls or decode labels before displaying them.
+### Summary fields
 
-The list intentionally omits description, contacts, weekly_days and exceptions. Fetch the detail endpoint when opening a facility.
+| Field | Meaning and UI handling |
+| --- | --- |
+| id | Stable opaque identifier; UI key and detail URL identifier |
+| name | Display name supplied by the admin |
+| type | Object with value and label; not a plain string |
+| location_name | Optional named place; may be null |
+| address | Optional stored street/barangay text; may be null |
+| image_url | Optional ready-to-use image URL; may be null |
+| availability | Calculated current status, notice and effective hours |
+| updated_at | Last saved record change; not a timer for schedule transitions |
 
-## 5. Detail response example
+Use image_url as provided. The backend uses the optimized image when available and can fall back to the original. Do not build media paths or conversion filenames in the app. URLs can be signed and expire; request fresh API data to obtain a new URL. A missing/failed image gets a local visual placeholder within an existing API card.
 
-This facility normally opens 6 AM–10 PM daily, but a cancellation overrides today's hours.
+Nullable location, address, image or time fields do not make a published facility invalid. Do not remove a card because next_opens_at is null, today_periods is empty, or is_open is false/null.
+
+### Empty result is successful data
+
+This example is a valid HTTP 200 empty search result:
+
+```json
+{
+  "data": [],
+  "links": {
+    "first": "https://api.example.invalid/api/v1/facilities?search=no-matching-example&page=1",
+    "last": "https://api.example.invalid/api/v1/facilities?search=no-matching-example&page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": null,
+    "last_page": 1,
+    "links": [
+      {
+        "url": null,
+        "label": "&laquo; Previous",
+        "page": null,
+        "active": false
+      },
+      {
+        "url": "https://api.example.invalid/api/v1/facilities?search=no-matching-example&page=1",
+        "label": "1",
+        "page": 1,
+        "active": true
+      },
+      {
+        "url": null,
+        "label": "Next &raquo;",
+        "page": null,
+        "active": false
+      }
+    ],
+    "path": "https://api.example.invalid/api/v1/facilities",
+    "per_page": 20,
+    "to": null,
+    "total": 0
+  }
+}
+```
+
+Clear the displayed collection for the requested list and show an appropriate empty message. For an unfiltered municipality list, say no facilities are currently available. For a filtered search, say no matching facilities. A filtered empty response does not prove that facilities outside the filter were unpublished.
+
+Do not restore default/sample Train or Park cards after an empty response.
+
+## 5. Detail response and schedule data
+
+Open details using the tapped card's id, not a hard-coded facility ID. The detail endpoint returns one object under data.
 
 ```json
 {
   "data": {
-    "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-    "name": "Municipal Park",
+    "id": "01m6znmr5zce56chk2sehq7c0b",
+    "name": "Children's Train",
     "type": {
-      "value": "park",
-      "label": "Park"
+      "value": "amusement_ride",
+      "label": "Amusement ride"
     },
     "location_name": "Municipal Plaza",
-    "address": "Beside the plaza entrance, Pinggan",
+    "address": "Plaza entrance, Pinggan",
     "image_url": null,
     "availability": {
       "timezone": "Asia/Manila",
-      "date": "2026-11-05",
-      "computed_at": "2026-11-05T15:00:00+08:00",
-      "next_refresh_at": "2026-11-05T15:01:00+08:00",
+      "date": "2026-11-09",
+      "computed_at": "2026-11-09T10:00:00+08:00",
+      "next_refresh_at": "2026-11-09T10:01:00+08:00",
       "is_open": false,
       "status": "cancelled",
       "label": "Cancelled today",
       "closes_at": null,
-      "next_opens_at": "2026-11-06T06:00:00+08:00",
+      "next_opens_at": "2026-11-10T13:00:00+08:00",
       "expected_reopens_at": null,
       "today_periods": [],
-      "notice": "Park operations are cancelled for the remainder of today due to heavy rain.",
+      "notice": "Train rides are cancelled today due to maintenance.",
       "notice_type": "cancelled"
     },
-    "updated_at": "2026-11-05T15:00:00+08:00",
-    "description": "A public park for recreation and family activities.",
-    "contact_name": "Municipal Office",
+    "description": "Public facility managed by the municipality.",
+    "contact_name": null,
     "contact_phone": null,
     "contact_email": null,
     "weekly_days": [
@@ -190,8 +407,8 @@ This facility normally opens 6 AM–10 PM daily, but a cancellation overrides to
         "is_closed": false,
         "periods": [
           {
-            "opening_minute": 360,
-            "closing_minute": 1320
+            "opening_minute": 780,
+            "closing_minute": 1020
           }
         ]
       },
@@ -200,8 +417,8 @@ This facility normally opens 6 AM–10 PM daily, but a cancellation overrides to
         "is_closed": false,
         "periods": [
           {
-            "opening_minute": 360,
-            "closing_minute": 1320
+            "opening_minute": 780,
+            "closing_minute": 1020
           }
         ]
       },
@@ -210,8 +427,8 @@ This facility normally opens 6 AM–10 PM daily, but a cancellation overrides to
         "is_closed": false,
         "periods": [
           {
-            "opening_minute": 360,
-            "closing_minute": 1320
+            "opening_minute": 780,
+            "closing_minute": 1020
           }
         ]
       },
@@ -220,8 +437,8 @@ This facility normally opens 6 AM–10 PM daily, but a cancellation overrides to
         "is_closed": false,
         "periods": [
           {
-            "opening_minute": 360,
-            "closing_minute": 1320
+            "opening_minute": 780,
+            "closing_minute": 1020
           }
         ]
       },
@@ -230,8 +447,8 @@ This facility normally opens 6 AM–10 PM daily, but a cancellation overrides to
         "is_closed": false,
         "periods": [
           {
-            "opening_minute": 360,
-            "closing_minute": 1320
+            "opening_minute": 780,
+            "closing_minute": 1020
           }
         ]
       },
@@ -240,8 +457,8 @@ This facility normally opens 6 AM–10 PM daily, but a cancellation overrides to
         "is_closed": false,
         "periods": [
           {
-            "opening_minute": 360,
-            "closing_minute": 1320
+            "opening_minute": 780,
+            "closing_minute": 1020
           }
         ]
       },
@@ -250,44 +467,49 @@ This facility normally opens 6 AM–10 PM daily, but a cancellation overrides to
         "is_closed": false,
         "periods": [
           {
-            "opening_minute": 360,
-            "closing_minute": 1320
+            "opening_minute": 780,
+            "closing_minute": 1020
           }
         ]
       }
     ],
     "exceptions": [
       {
-        "id": "01ARZ3NDEKTSV4RRFFQ69G5FAW",
-        "exception_date": "2026-11-05",
+        "id": "01m6znmr7y78hpjx0nt40q9xd8",
+        "exception_date": "2026-11-09",
         "is_closed": true,
         "notice_type": "cancelled",
-        "public_notice": "Park operations are cancelled for the remainder of today due to heavy rain.",
+        "public_notice": "Train rides are cancelled today due to maintenance.",
         "periods": []
       }
-    ]
+    ],
+    "updated_at": "2026-11-09T10:00:00+08:00"
   }
 }
 ```
 
-### Public field notes
+Details include the summary fields plus:
 
-| Field | Meaning |
+| Field | Shape / meaning |
 | --- | --- |
-| id | Facility ULID |
-| name | Public facility name |
-| type | Machine value and display label |
-| location_name | Place or landmark, such as Municipal Plaza |
-| address | Combined street/details and barangay; municipality is already selected in the app |
-| image_url | Image URL or null |
-| availability | Current server-calculated status and effective hours |
-| updated_at | Last saved facility change, with timezone offset |
-| description | Nullable public description; detail only |
-| contact_name / contact_phone / contact_email | Nullable public contact information; detail only |
-| weekly_days | Regular recurring schedule; detail only |
-| exceptions | Today's and upcoming date-specific replacements; detail only |
+| description | Optional public description |
+| contact_name | Optional public contact |
+| contact_phone | Optional public phone |
+| contact_email | Optional public email |
+| weekly_days | Array of day_of_week, is_closed and periods |
+| exceptions | Array of date-specific updates and their periods |
+| exceptions[].id | Identifier of an exception, not a facility identifier |
+| exceptions[].exception_date | Manila calendar date, YYYY-MM-DD |
+| exceptions[].is_closed | Whether that entire date has no operating periods |
+| exceptions[].notice_type | Notice classification |
+| exceptions[].public_notice | Public explanation |
+| periods[] | opening_minute and closing_minute integer fields |
 
-Optional text and image fields may be null. Admin fields such as municipal_id, revision, is_published and audit_log are not exposed.
+The current detail response includes exceptions dated today or later, not a complete historical change log. Administrative fields such as municipal_id, publication flags, revision counters and audit information are not part of this public contract.
+
+Use availability for the current badge. Weekly hours show the normal recurring schedule; exceptions explain date changes. Never show regular hours as proof that a cancelled facility is open.
+
+An unpublished, deleted, foreign-municipality, draft or invalid-ID detail is unavailable (HTTP 404). Clear a stale detail view, stop polling that unavailable record and refresh the list. Do not turn a 404 into an empty schedule attached to a permanent hard-coded card.
 
 ## 6. Availability and status handling
 
@@ -351,57 +573,152 @@ Precedence:
 
 Display exceptions by exception_date as a Manila calendar date; do not shift a date-only string through the device timezone. Timestamps have explicit offsets and should be interpreted as instants, then displayed in Philippine time for facility schedules.
 
-## 8. Refreshing, images and offline behavior
+## 8. Mobile state, refresh and pagination implementation
 
-Refetch at next_refresh_at while the relevant screen is visible, when the app resumes or the screen regains focus, and on manual refresh. Stop background screen polling when hidden. After receiving a new response, schedule using its new next_refresh_at. If that time is already past, refetch once; avoid a tight retry loop.
+### Initial load and every refresh
 
-The current service schedules a refresh at most one minute ahead and sooner at an opening/closing transition or local midnight. Do not use updated_at alone for status caching: a facility can open because time passed without any database edit.
+1. Capture the current API origin, municipality slug, search and type as the request scope.
+2. Start a new request generation. Cancel or ignore responses from older generations, especially after a municipality/filter change.
+3. Fetch page 1 with the required headers. For a small catalog, fetch all remaining pages into a NEW temporary collection.
+4. Validate successful status, JSON shape, record IDs and page continuity. Commit only a complete successful collection for the same scope/generation.
+5. REPLACE the old list for that scope with the newly fetched collection.
+6. Render one card per returned record and schedule the next list refresh.
 
-No push notification is sent by these endpoints. A cancellation appears in the app after the next successful fetch.
+Avoid upsert-only code such as adding every returned item to an existing map and never removing old keys. That leaves unpublished records visible.
 
-Responses use no-store. If the app intentionally retains an offline copy, show a last-updated indicator and identify the status as last-known information. Handle network failures with a retry option and bounded retry/backoff; do not present stale open status as freshly confirmed.
+Framework-neutral pseudocode:
 
-image_url can be null. S3 image URLs expire after 15 minutes; refetch the facility response for a new URL after expiry or an expired-image failure. Do not store a signed image URL as a permanent address.
+```text
+refreshFacilities(scope):
+    generation = startNewGeneration(scope)
+    candidate = []
+    nextPage = firstFacilitiesPage(scope)
 
-## 9. Error handling
+    while nextPage exists:
+        response = GET nextPage with Accept and municipality headers
+        require successful JSON list response
+        require response still belongs to current scope and generation
+        validate pagination; collect response.data into candidate
+        nextPage = response.links.next
 
-| HTTP status | Meaning / action |
-| --- | --- |
-| 200 | Successful list or detail JSON |
-| 403 | Municipality context is missing, unknown or inactive; verify the slug and selected municipality |
-| 404 | Unknown/malformed facility ID, draft, deleted facility, or facility outside the selected municipality |
-| 405 | Unsupported method; this API provides GET reads only |
-| 422 | Invalid list query parameters; inspect the errors object |
-| 5xx / network failure | Show retry state; avoid overwriting valid content with an empty list |
+    require generation and scope still current
+    replaceFacilitiesForScope(scope, candidate)
+    scheduleNextListRefresh(candidate)
+```
 
-A typical 422 response has a message and errors keyed by parameter, for example:
+This replacement applies to the completed list, not just one page. If using infinite scroll, append later pages only within the same request generation. A refresh starts a new page sequence; do not merge its first page into stale pages from an older sequence.
+
+### How to handle removed records and caches
+
+After a complete successful UNFILTERED municipality snapshot, IDs missing from that snapshot can be removed from that municipality's cached facility inventory and related detail caches.
+
+Absence from a single page, a search result or a type-filtered result is not evidence of global unpublication. Replace that view's results, but do not globally delete unrelated facilities based on that partial view.
+
+Cache keys must include origin/environment and municipality. List keys also include search/type and pagination strategy; detail keys include id. Ignore late responses from a previous municipality or previous filter. Use an explicit loading state during scope changes.
+
+### Pagination consistency
+
+Pagination is page based, not a frozen database snapshot. A facility can be published, renamed or unpublished between page requests.
+
+Use meta.total/current_page/last_page and links.next to detect obviously inconsistent runs. Reject duplicate IDs, repeated page links, changing totals or an incomplete unique-record count. Discard the partial candidate and retry from page 1 with a bounded retry policy. If retries fail, show a refresh error instead of treating a partial result as a complete inventory. These checks detect common changes; the API does not guarantee snapshot isolation.
+
+Never remove cards merely because they were absent from page 1 while more pages remain. Avoid a partial refresh that deletes page-2 cards and avoid an append-only refresh that retains old page-2 cards forever.
+
+### Refresh timing and discovering new/unpublished facilities
+
+- Fetch the list when the Facilities screen opens.
+- Refresh on app resume or returning to the screen, and support pull-to-refresh.
+- While visible, use the earliest valid availability.next_refresh_at among the loaded facilities to refresh the LIST. One shared timer is sufficient.
+- The backend normally sets next_refresh_at within one minute, or sooner at a transition/midnight.
+- An empty list has no item timer. Continue a modest visible-screen discovery poll, for example every 60 seconds, so newly published facilities can appear.
+- Stop screen polling while hidden/backgrounded; refresh on return.
+- Refetch details while the detail screen is visible, and refresh the list when returning. Refreshing only existing detail URLs cannot discover newly published facilities.
+- If a timestamp is already due, refresh promptly with a small minimum interval to avoid a tight loop. Back off on network errors.
+- Do not use updated_at alone to decide whether to refresh. Open/closed status changes as time passes without a record edit.
+
+The app must request fresh data at an opening/closing boundary; a countdown may help presentation but must not invent an open state. Polling is not an instant push guarantee, and admin notifications are optional.
+
+### Loading, errors and offline behavior
+
+Keep loading, successful empty, successful populated and error states distinct. A failed request is not a successful empty list.
+
+If retaining previously loaded data after a network failure, label it as stale/offline with its last refresh time. Do not present an old open badge as current. After the next successful complete response, replace it normally, including removal of unpublished records.
+
+Check status and Content-Type before decoding success JSON. Retry transient failures with bounded backoff. Do not repeatedly retry 404 detail or 422 invalid-filter requests without changing the request. A detail 404 clears its stale detail and triggers a list refresh.
+
+## 9. HTTP and error handling
+
+| Result | Meaning | Mobile action |
+| --- | --- | --- |
+| 200 list, data populated | Matching public records | Replace the completed list for this scope |
+| 200 list, data empty | No matching public records | Clear this view and show an empty state |
+| 200 detail | Public facility still available | Display fresh detail and availability |
+| 404 detail | Facility unavailable for this municipality | Clear stale detail, stop its timer, refresh list |
+| 422 | Invalid supported query parameter | Fix the request; show a useful error |
+| 403 / context-related 404 | Missing, inactive or invalid municipality context | Check configured origin/slug |
+| 429 / 5xx / network failure | Request failed | Show error/stale state and back off |
+
+Illustrative validation response; messages may vary:
+
 ```json
 {
-  "message": "The per page field must be at least 1.",
+  "message": "The selected type is invalid.",
   "errors": {
-    "per_page": [
-      "The per page field must be at least 1."
-    ]
+    "type": ["The selected type is invalid."]
   }
 }
 ```
 
-Validation text can vary; use status codes and error keys for logic. The shared municipality middleware currently uses an Inertia restriction response for invalid municipality context, so a 403 body is not guaranteed to follow the JSON validation-error shape. Check HTTP status and Content-Type before decoding a response as the success contract.
+Municipality restriction middleware can return an Inertia/HTML restriction response. Do not assume every error follows this JSON shape. Check HTTP status and Content-Type. HTTP success must also match the expected list/detail schema.
 
-## 10. Mobile acceptance checklist
+## 10. Notifications are separate from public API reads
 
-- Load the correct municipality's facilities with the slug header.
-- Handle empty lists, null optional fields and multiple pages.
-- Open a facility detail page and display weekly periods and date updates.
-- Show cancellation notices even while the regular weekly hours would be open.
-- Keep uncertain delays closed after an estimated reopening time passes.
-- Refresh across exact opening/closing times and when resuming the app.
-- Display Manila schedules correctly when the device timezone differs.
-- Handle deleted/unpublished detail records with a graceful 404 state.
-- Support expired image URLs and network/offline states.
-- Keep administrative controls outside this mobile feature.
+The backend can optionally queue an AGA notification when an admin saves a qualifying date-specific update or operating-status change and chooses to notify users. The server calls the AGA notification endpoint; the mobile Facilities GET requests do not send notifications.
 
-Backend verification: 36 Facility tests passed when the mobile API was implemented, including public filtering, municipality isolation, JSON contracts, cancellation/delay output, pagination, method restrictions and opening-boundary refreshes.
+A notification is a prompt to reload authoritative list/detail data. Do not create a facility card from notification text, assume every admin edit sends a notification, or depend on notifications to remove unpublished cards.
 
-Before production release, confirm the deployed host, municipality slug and that the backend version containing these endpoints is live.
+The current external notification message does not provide a guaranteed facility ID/deep link. Do not invent an ID by matching a Train name. If opening Facilities from a general notification, refresh the list first.
 
+The optional notification event_type is not the facilities type enum and must not be used as the list's type query. Server notification credentials belong only on the backend.
+
+## 11. Acceptance checks for the mobile developer
+
+Run these against a backend test environment, using real test records created by the web admin:
+
+| Test | Expected result |
+| --- | --- |
+| Publish Park and Train | Two cards populated entirely from list records |
+| Unpublish Train, then refresh | Only Park remains; no empty Train card |
+| Unpublish all facilities | Successful empty state; no built-in cards |
+| Republish Train | Train returns on the next list refresh |
+| Rename Train | Existing id now displays the new name |
+| Publish another amusement ride | Separate card; same type does not replace Train |
+| Publish several facilities of all five types | Every returned record can render |
+| Set a published facility to temporarily/permanently closed | Card remains with closure badge and notice |
+| Cancel today's operation | Card remains, cancelled status overrides weekly hours |
+| Confirm a delayed opening | Shows delayed until backend returns open at confirmed time |
+| Set an uncertain reopening estimate | Does not open locally when the estimate passes |
+| More records than per_page | All pages accessible, no missing or duplicate cards |
+| Remove an item formerly on a later page | It disappears after a full refreshed page sequence |
+| Filter/search, then clear filters | Correct collections; filtered absence does not delete global cache |
+| Switch municipality during an in-flight request | Old response cannot populate new municipality |
+| Switch development/production | No cache mixing between origins |
+| Unpublish an open detail record | Detail request returns 404; stale detail clears |
+| Null image/contact/next opening | Card remains; optional fields get safe display handling |
+| Background/resume and exact opening/closing time | Fresh API status displayed |
+| Network error after a prior successful load | Error/stale state, not fabricated empty success |
+| Open app with no facilities, publish one while screen visible | Discovery polling makes it appear |
+
+Before release, confirm the deployed origin, slug and backend version. Test with actual dynamic records; do not ship the sample fixture names or IDs as app data.
+
+## 12. Copyable implementation brief for the mobile developer's AI
+
+Implement a dynamic Facilities screen using GET /api/v1/facilities with Accept: application/json and the selected municipality's X-Municipality-Slug header.
+
+The API list owns which facility cards exist. Render one card for each response.data record, keyed by its opaque id. Do not hard-code Train/Park/Playground cards, names, IDs or a one-card-per-type inventory. Omit the type filter to get all facility types; support multiple records of the same type.
+
+On every successful complete list refresh, replace the old collection. If Train is unpublished, it is absent from the refreshed collection and its card must disappear. If a published Train is cancelled, delayed or closed, it is still returned and must stay visible with the server availability badge and notice. Empty data is a valid empty state and must remove previous cards for that list.
+
+Implement pagination, request generation/cancellation, municipality/environment-scoped caches, visible-screen list refresh using next_refresh_at, discovery polling for an empty list, resume/pull refresh, detail loading by returned id, graceful detail 404, null fields, Manila time formatting and distinct offline/error states. Do not treat failed or partial page requests as a complete successful inventory.
+
+Use availability.status/is_open for the current status and availability.label for display. Weekly schedules do not override cancellations or ongoing holds. expected_reopens_at is an estimate and never automatically reopens a facility. No mobile admin write endpoints or notification secrets are needed.

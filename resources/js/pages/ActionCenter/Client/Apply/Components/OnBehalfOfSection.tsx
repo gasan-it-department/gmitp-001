@@ -1,6 +1,8 @@
+import HouseholdMemberDuplicateReview from '@/components/ActionCenter/HouseholdMemberDuplicateReview';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useHouseholdMemberDuplicateCheck } from '@/Core/Hooks/ActionCenter/useHouseholdMemberDuplicateCheck';
 import { HouseholdMemberOption, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
 import api from '@/lib/axios';
 import axios from 'axios';
@@ -228,6 +230,7 @@ export function OnBehalfOfSection({
             {/* ── Inline household-member form ── */}
             {isAdding && (
                 <InlineAddMemberForm
+                    audience={audience}
                     relationships={householdRelationshipOptions}
                     storeHouseholdMemberUrl={storeHouseholdMemberUrl}
                     municipalitySlug={municipalitySlug}
@@ -369,12 +372,14 @@ function FamilyMemberPicker({
 }
 
 function InlineAddMemberForm({
+    audience,
     relationships,
     storeHouseholdMemberUrl,
     municipalitySlug,
     onCancel,
     onCreated,
 }: {
+    audience: 'citizen' | 'admin';
     relationships: RelationshipOption[];
     storeHouseholdMemberUrl: string;
     municipalitySlug: string;
@@ -392,7 +397,14 @@ function InlineAddMemberForm({
     const [serverError, setServerError] = useState<string | null>(null);
     const today = new Date().toISOString().split('T')[0];
 
-    const canSave = firstName.trim().length > 0 && lastName.trim().length > 0 && relationship !== '' && !saving;
+    const duplicates = useHouseholdMemberDuplicateCheck(audience === 'admin', storeHouseholdMemberUrl, municipalitySlug, {
+        first_name: firstName,
+        middle_name: middleName,
+        last_name: lastName,
+        suffix,
+        birth_date: birthDate,
+    });
+    const canSave = firstName.trim().length > 0 && lastName.trim().length > 0 && relationship !== '' && !saving && duplicates.ready;
 
     const handleSave = async () => {
         setServerError(null);
@@ -409,6 +421,7 @@ function InlineAddMemberForm({
                     relationship,
                     birth_date: birthDate || null,
                     sex: sex || null,
+                    ...(audience === 'admin' ? duplicates.payload : {}),
                 },
                 {
                     headers: {
@@ -423,6 +436,7 @@ function InlineAddMemberForm({
             // the validation message inline too so the user sees it next to
             // the inputs.
             setServerError(getHouseholdMemberError(err));
+            if (audience === 'admin') duplicates.refresh();
         } finally {
             setSaving(false);
         }
@@ -532,6 +546,7 @@ function InlineAddMemberForm({
                 </div>
             </div>
 
+            {audience === 'admin' && <HouseholdMemberDuplicateReview check={duplicates} municipality={municipalitySlug} onCancel={onCancel} />}
             {serverError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{serverError}</p>}
 
             <button

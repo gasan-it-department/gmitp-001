@@ -10,13 +10,17 @@ class FacilityBaseResource extends JsonResource
     public function toArray(Request $request): array
     {
         $image = $this->getFirstMedia('facility_image');
+        $conversion = $image?->hasGeneratedConversion('optimized') ? 'optimized' : '';
+        $disk = $conversion !== '' ? ($image->conversions_disk ?: $image->disk) : $image?->disk;
 
         return [
             'id' => $this->id, 'name' => $this->name,
             'type' => ['value' => $this->type->value, 'label' => $this->type->label()],
             'location_name' => $this->location_name,
             'address' => $this->address,
-            'image_url' => $image ? ($image->disk === 's3' ? $image->getTemporaryUrl(now()->addMinutes(15)) : $image->getUrl()) : null,
+            'image_url' => $image ? ($disk === 's3'
+                ? $image->getTemporaryUrl(now()->addMinutes(15), $conversion)
+                : $image->getUrl($conversion)) : null,
             'availability' => $this->availability,
         ];
     }

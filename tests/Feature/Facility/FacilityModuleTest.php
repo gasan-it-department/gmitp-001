@@ -95,6 +95,93 @@ function facilityTestPublish(Facility $facility): Facility
     );
 }
 
+it('returns multiple published facilities of every type through the mobile API', function () {
+    $types = App\Core\Facility\Enums\FacilityType::cases();
+    $expectedIds = [];
+    foreach ($types as $type) {
+        foreach (range(1, 2) as $number) {
+            $facility = app(StoreFacilityAction::class)->execute(new StoreFacilityDto($this->gasan->id, [
+                'name' => $type->label().' '.$number, 'type' => $type->value, 'location_name' => 'Municipal Plaza',
+            ]));
+            facilityTestPublish($facility);
+            $expectedIds[] = $facility->id;
+        }
+    }
+    // A published operating hold must remain visible alongside facilities following their hours.
+    app(SetFacilityOperatingStatusAction::class)->execute($expectedIds[0], new FacilityOperatingStatusDto(
+        $this->gasan->id, Facility::findOrFail($expectedIds[0])->revision,
+        FacilityOperatingStatus::TEMPORARILY_CLOSED, 'Closed for maintenance.',
+    ));
+    $foreign = app(StoreFacilityAction::class)->execute(new StoreFacilityDto($this->boac->id, [
+        'name' => 'Other municipality park', 'type' => 'park', 'location_name' => 'Boac Plaza',
+    ]));
+    facilityTestPublish($foreign);
+
+    $headers = ['X-Municipality-Slug' => $this->gasan->slug];
+    $response = $this->getJson('/api/v1/facilities', $headers)->assertOk()
+        ->assertJsonCount(count($expectedIds), 'data')->assertJsonPath('meta.total', count($expectedIds))
+        ->assertJsonPath('meta.per_page', 20);
+    $rows = collect($response->json('data'));
+    expect($rows->pluck('id')->all())->toEqualCanonicalizing($expectedIds);
+    expect($rows->firstWhere('id', $expectedIds[0])['availability']['status'])->toBe('temporarily_closed');
+    foreach ($types as $type) {
+        $matching = $rows->filter(fn ($row) => $row['type']['value'] === $type->value);
+        expect($matching)->toHaveCount(2);
+        expect($matching->pluck('type.label')->unique()->values()->all())->toBe([$type->label()]);
+        $filtered = $this->getJson('/api/v1/facilities?type='.$type->value, $headers)->assertOk()
+            ->assertJsonCount(2, 'data')->assertJsonPath('meta.total', 2);
+        expect(collect($filtered->json('data'))->pluck('id')->all())->toEqualCanonicalizing($matching->pluck('id')->all());
+    }
+
+    // A small page size must still make every published facility reachable across pages.
+    $paginatedIds = [];
+    $next = '/api/v1/facilities?per_page=3';
+    $pages = 0;
+    do {
+        $page = $this->getJson($next, $headers)->assertOk()->assertJsonPath('meta.total', count($expectedIds));
+        $paginatedIds = [...$paginatedIds, ...array_column($page->json('data'), 'id')];
+        $next = $page->json('links.next');
+        $pages++;
+        expect($pages)->toBeLessThanOrEqual(4);
+    } while ($next !== null);
+    expect($pages)->toBe(4)->and($paginatedIds)->toHaveCount(count($expectedIds))->toEqualCanonicalizing($expectedIds);
+});
+
+it('removes unpublished facilities from refreshed mobile lists and returns 404 for their details', function () {
+    $train = facilityTestPublish($this->facility);
+    $park = app(StoreFacilityAction::class)->execute(new StoreFacilityDto($this->gasan->id, [
+        'name' => 'Municipal Park', 'type' => 'park', 'location_name' => 'Municipal Plaza',
+    ]));
+    facilityTestPublish($park);
+    $headers = ['X-Municipality-Slug' => $this->gasan->slug];
+    $list = fn () => $this->getJson('/api/v1/facilities', $headers)->assertOk();
+    $initial = $list()->assertJsonCount(2, 'data')->assertJsonPath('meta.total', 2);
+    expect(array_column($initial->json('data'), 'id'))->toEqualCanonicalizing([$train->id, $park->id]);
+
+    app(SetFacilityOperatingStatusAction::class)->execute($train->id, new FacilityOperatingStatusDto(
+        $this->gasan->id, $train->fresh()->revision, FacilityOperatingStatus::TEMPORARILY_CLOSED, 'Repairs ongoing.',
+    ));
+    $held = $list()->assertJsonCount(2, 'data');
+    expect(collect($held->json('data'))->firstWhere('id', $train->id)['availability']['status'])->toBe('temporarily_closed');
+
+    $publication = app(SetFacilityPublicationAction::class);
+    $publication->execute($train->id, new FacilityMutationDto($this->gasan->id, $train->fresh()->revision), false);
+    $list()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $park->id)->assertJsonPath('meta.total', 1);
+    $this->getJson('/api/v1/facilities/'.$train->id, $headers)->assertNotFound();
+
+    $publication->execute($park->id, new FacilityMutationDto($this->gasan->id, $park->fresh()->revision), false);
+    $list()->assertJsonCount(0, 'data')->assertJsonPath('meta.total', 0);
+
+    $publication->execute($train->id, new FacilityMutationDto($this->gasan->id, $train->fresh()->revision), true);
+    app(UpdateFacilityAction::class)->execute($train->id, new UpdateFacilityDto(
+        $this->gasan->id, ['name' => 'Renamed Train'], $train->fresh()->revision,
+    ));
+    $list()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $train->id)->assertJsonPath('data.0.name', 'Renamed Train');
+    app(DeleteFacilityAction::class)->execute($train->id, new FacilityMutationDto($this->gasan->id, $train->fresh()->revision));
+    $list()->assertJsonCount(0, 'data')->assertJsonPath('meta.total', 0);
+    $this->getJson('/api/v1/facilities/'.$train->id, $headers)->assertNotFound();
+});
+
 it('handles exact boundaries and multiple opening periods', function () {
     facilityTestWeek($this->facility);
     expect(facilityTestAvailability($this->facility, '2026-11-02 07:59')['is_open'])->toBeFalse()
@@ -308,12 +395,49 @@ it('stores media in municipality-specific paths and supports explicit image remo
     Storage::fake('public');
     config(['media-library.disk_name' => 'public']);
     $action = app(UpdateFacilityAction::class);
-    $action->execute($this->facility->id, new UpdateFacilityDto($this->gasan->id, [], 0, UploadedFile::fake()->image('train.jpg')));
+    $action->execute($this->facility->id, new UpdateFacilityDto($this->gasan->id, [], 0, UploadedFile::fake()->image('train.jpg', 2000, 1000)));
     $media = $this->facility->fresh()->getFirstMedia('facility_image');
     expect($media->getPathRelativeToRoot())->toStartWith($this->gasan->id.'/facilities/'.$this->facility->id.'/');
     Storage::disk('public')->assertExists($media->getPathRelativeToRoot());
+    expect($media->hasGeneratedConversion('optimized'))->toBeTrue();
+    Storage::disk('public')->assertExists($media->getPathRelativeToRoot('optimized'));
+    $dimensions = getimagesize($media->getPath('optimized'));
+    expect($dimensions[0])->toBe(1200)->and($dimensions[1])->toBe(600)->and($dimensions['mime'])->toBe('image/webp');
     $action->execute($this->facility->id, new UpdateFacilityDto($this->gasan->id, [], 1, removeImage: true));
     expect($this->facility->fresh()->getFirstMedia('facility_image'))->toBeNull();
+});
+
+it('serves optimized Facility images through mobile reads and falls back for older uploads', function () {
+    Storage::fake('public');
+    config(['media-library.disk_name' => 'public']);
+    $this->facility->addMedia(UploadedFile::fake()->image('park.jpg'))->toMediaCollection('facility_image');
+    facilityTestPublish($this->facility);
+    $media = $this->facility->fresh()->getFirstMedia('facility_image');
+    $headers = ['X-Municipality-Slug' => $this->gasan->slug];
+    $this->getJson('/api/v1/facilities', $headers)->assertOk()->assertJsonPath('data.0.image_url', $media->getUrl('optimized'));
+    $this->getJson('/api/v1/facilities/'.$this->facility->id, $headers)->assertOk()->assertJsonPath('data.image_url', $media->getUrl('optimized'));
+    $media->update(['generated_conversions' => []]);
+    $this->getJson('/api/v1/facilities/'.$this->facility->id, $headers)->assertOk()->assertJsonPath('data.image_url', $media->getUrl());
+    $this->getJson('/api/v1/facilities', $headers)->assertOk()->assertJsonPath('data.0.image_url', $media->getUrl());
+});
+
+it('uses expiring S3 URLs for converted Facility images and the original fallback', function () {
+    Storage::fake('public');
+    config(['media-library.disk_name' => 'public']);
+    $this->facility->addMedia(UploadedFile::fake()->image('park.jpg'))->toMediaCollection('facility_image');
+    $media = $this->facility->fresh()->getFirstMedia('facility_image');
+    // Generate locally, then emulate S3 URL signing without external storage calls.
+    Storage::fake('s3')->buildTemporaryUrlsUsing(function ($path, $expiration) {
+        expect($expiration->getTimestamp())->toBe(now()->addMinutes(15)->getTimestamp());
+        return 'https://storage.example.test/'. $path .'?signed=test';
+    });
+    $media->update(['disk' => 's3', 'conversions_disk' => 's3']);
+    $resource = fn () => (new App\External\Api\Resources\Facility\FacilityBaseResource(
+        app(GetFacilityDetailsAction::class)->execute($this->gasan->id, $this->facility->id),
+    ))->resolve()['image_url'];
+    expect($resource())->toBe('https://storage.example.test/'.$media->getPathRelativeToRoot('optimized').'?signed=test');
+    $media->update(['generated_conversions' => []]);
+    expect($resource())->toBe('https://storage.example.test/'.$media->getPathRelativeToRoot().'?signed=test');
 });
 
 function facilityTestAddressCatalogue(Municipality $gasan, Municipality $boac): array

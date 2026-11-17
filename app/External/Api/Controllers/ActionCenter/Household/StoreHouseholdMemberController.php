@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Controllers\ActionCenter\Household;
 
+use App\Core\ActionCenter\Dto\Household\HouseholdMemberDuplicateReviewDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\UseCase\Household\StoreAdminHouseholdMemberAction;
 use App\External\Api\Request\ActionCenter\Household\AdminHouseholdMemberRequest;
@@ -29,6 +30,7 @@ final class StoreHouseholdMemberController extends Controller
                 dto: $dto,
                 municipalId: app('municipal_id'),
                 isVerifiedDependent: $request->boolean('is_verified_dependent'),
+                duplicateReview: HouseholdMemberDuplicateReviewDto::fromArray($request->validated()),
             );
 
             if ($request->expectsJson()) {

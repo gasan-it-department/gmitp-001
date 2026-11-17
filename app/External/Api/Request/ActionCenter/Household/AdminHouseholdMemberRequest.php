@@ -57,6 +57,9 @@ class AdminHouseholdMemberRequest extends FormRequest
 
             'religion_id' => ['nullable', 'ulid', Rule::exists('ac_religions', 'id')],
             'is_verified_dependent' => ['sometimes', 'boolean'],
+            'duplicate_review_context' => ['nullable', 'string', 'max:10000'],
+            'confirm_different_person' => ['sometimes', 'boolean'],
+            'different_person_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
         ];
     }
 

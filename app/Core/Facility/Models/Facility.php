@@ -16,6 +16,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Facility extends Model implements HasMedia
 {
@@ -63,5 +64,15 @@ class Facility extends Model implements HasMedia
     {
         $this->addMediaCollection('facility_image')->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('optimized')
+            ->width(1200)
+            ->format('webp')
+            ->quality(80)
+            ->performOnCollections('facility_image')
+            ->nonQueued();
     }
 }

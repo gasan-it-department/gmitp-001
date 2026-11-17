@@ -1,9 +1,11 @@
 import StoreAdminHouseholdMemberController from '@/actions/App/External/Api/Controllers/ActionCenter/Household/StoreAdminHouseholdMemberController';
 import UpdateHouseholdMemberController from '@/actions/App/External/Api/Controllers/ActionCenter/Household/UpdateHouseholdMemberController';
+import HouseholdMemberDuplicateReview from '@/components/ActionCenter/HouseholdMemberDuplicateReview';
 import { FormInput } from '@/components/FormInputField';
 import { DatePicker } from '@/components/Shared/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useHouseholdMemberDuplicateCheck } from '@/Core/Hooks/ActionCenter/useHouseholdMemberDuplicateCheck';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -72,7 +74,7 @@ export default function MemberFormDialog({
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<MemberFormData>({
+    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<MemberFormData>({
         first_name: member?.first_name ?? '',
         middle_name: member?.middle_name ?? '',
         last_name: member?.last_name ?? '',
@@ -88,6 +90,12 @@ export default function MemberFormDialog({
     });
 
     const serverError = (errors as Record<string, string | undefined>).member;
+    const duplicates = useHouseholdMemberDuplicateCheck(
+        open && mode === 'add',
+        StoreAdminHouseholdMemberController.url({ beneficiaryId }),
+        currentMunicipality.slug,
+        data,
+    );
 
     const handleClose = () => {
         clearErrors();
@@ -100,6 +108,7 @@ export default function MemberFormDialog({
         const options = {
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
             preserveScroll: true,
+            onError: () => duplicates.refresh(),
             onSuccess: () => {
                 reset();
                 onClose();
@@ -107,6 +116,7 @@ export default function MemberFormDialog({
         } as const;
 
         if (mode === 'add') {
+            transform((current) => ({ ...current, ...duplicates.payload }));
             post(StoreAdminHouseholdMemberController.url({ beneficiaryId }), options);
         } else if (member) {
             put(UpdateHouseholdMemberController.url({ memberId: member.id }), options);
@@ -114,15 +124,13 @@ export default function MemberFormDialog({
     };
 
     const canSubmit =
-        data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing;
+        data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing && duplicates.ready;
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle className="text-xl text-slate-900">
-                        {mode === 'add' ? 'Add household member' : 'Edit household member'}
-                    </DialogTitle>
+                    <DialogTitle className="text-xl text-slate-900">{mode === 'add' ? 'Add household member' : 'Edit household member'}</DialogTitle>
                     <DialogDescription className="text-slate-500">
                         {mode === 'add'
                             ? 'Add another person who lives in this household. The change is logged.'
@@ -256,6 +264,7 @@ export default function MemberFormDialog({
                         />
                     </div>
 
+                    <HouseholdMemberDuplicateReview check={duplicates} municipality={currentMunicipality.slug} onCancel={handleClose} />
                     <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-500 hover:bg-slate-100">
                             Cancel

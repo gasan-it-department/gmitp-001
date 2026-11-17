@@ -42,6 +42,7 @@ use App\External\Api\Controllers\ActionCenter\Beneficiary\SearchHouseholdMembers
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\UpdateBeneficiaryProfileController;
 use App\External\Api\Controllers\ActionCenter\Household\ChangeHouseholdHeadController;
+use App\External\Api\Controllers\ActionCenter\Household\CheckHouseholdMemberDuplicatesController;
 use App\External\Api\Controllers\ActionCenter\Household\DeclareHouseholdMemberForAssistanceController;
 use App\External\Api\Controllers\ActionCenter\Household\GetHouseholdTransferContextController;
 use App\External\Api\Controllers\ActionCenter\Household\LinkHouseholdMemberToBeneficiaryController;
@@ -645,6 +646,14 @@ Route::prefix('/api/action-center')
                 Route::post('/households/{householdId}/members', StoreHouseholdMemberController::class)
                     ->middleware('permission:action_center.beneficiaries.manage')
                     ->name('household.members.store-admin');
+
+                Route::post('/households/{householdId}/members/check', CheckHouseholdMemberDuplicatesController::class)
+                    ->middleware('permission:action_center.beneficiaries.manage')
+                    ->name('household.members.check');
+
+                Route::post('/beneficiary/{beneficiaryId}/household/members/check', [CheckHouseholdMemberDuplicatesController::class, 'forBeneficiary'])
+                    ->middleware('permission:action_center.beneficiaries.manage')
+                    ->name('household.members.check-beneficiary');
 
                 Route::post('/households/{householdId}/beneficiaries', StoreHouseholdBeneficiaryController::class)
                     ->middleware('permission:action_center.beneficiaries.manage')

@@ -1,12 +1,14 @@
 import UpdateHouseholdMemberController from '@/actions/App/External/Api/Controllers/ActionCenter/Household/UpdateHouseholdMemberController';
+import HouseholdMemberDuplicateReview from '@/components/ActionCenter/HouseholdMemberDuplicateReview';
 import { FormInput } from '@/components/FormInputField';
 import { DatePicker } from '@/components/Shared/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useHouseholdMemberDuplicateCheck } from '@/Core/Hooks/ActionCenter/useHouseholdMemberDuplicateCheck';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { FormEventHandler, useEffect } from 'react';
+import { FormEventHandler, useEffect, useRef } from 'react';
 import { ShadcnSelectField } from '../../../../Client/Apply/Beneficiary/Components/ShadcnSelectField';
 import type { EnumOption, ReligionOption } from '../../../../Client/Apply/Beneficiary/types';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
@@ -92,15 +94,18 @@ export default function MemberFormDialog({
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<MemberFormData>(memberToFormData(member));
+    const duplicates = useHouseholdMemberDuplicateCheck(open && mode === 'add', storeUrl, currentMunicipality.slug, data);
+    const previous = useRef({ open: false, memberId: member?.id });
 
     // Re-seed form state when the dialog opens (or the target member changes).
     // useForm only captures initial values on mount — the dialog stays mounted
     // and is toggled via `open`, so without this the edit fields stay empty.
     useEffect(() => {
-        if (open) {
+        if (open && (!previous.current.open || previous.current.memberId !== member?.id)) {
             setData(memberToFormData(member));
             clearErrors();
         }
+        previous.current = { open, memberId: member?.id };
     }, [clearErrors, member, open, setData]);
 
     const serverError = (errors as Record<string, string | undefined>).member;
@@ -114,10 +119,11 @@ export default function MemberFormDialog({
     };
 
     const submitWithVerification = (verified: boolean) => {
-        transform((current) => ({ ...current, is_verified_dependent: verified }));
+        transform((current) => ({ ...current, is_verified_dependent: verified, ...(mode === 'add' ? duplicates.payload : {}) }));
         const options = {
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
             preserveScroll: true,
+            onError: () => duplicates.refresh(),
             onSuccess: () => {
                 reset();
                 onClose();
@@ -138,7 +144,7 @@ export default function MemberFormDialog({
 
     const canSubmit = isLinkedMember
         ? data.relationship.length > 0 && !processing
-        : data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing;
+        : data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing && duplicates.ready;
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
@@ -318,6 +324,7 @@ export default function MemberFormDialog({
                         </>
                     )}
 
+                    <HouseholdMemberDuplicateReview check={duplicates} municipality={currentMunicipality.slug} onCancel={handleClose} />
                     <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-500 hover:bg-slate-100">
                             Cancel

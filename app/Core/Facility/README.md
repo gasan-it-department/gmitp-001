@@ -63,6 +63,18 @@ Listing supports optional `search`, `type`, `page` and `per_page`. Page size def
 
 The app should refetch at `next_refresh_at` while visible and when returning to the screen. A facility's `updated_at` tracks saved changes, not clock-based opening/closing transitions. Responses use `Cache-Control: no-store`; offline copies must be clearly identified as last-known information. Delay estimates never automatically clear an operational hold. Signed image URLs expire after 15 minutes; refetch to obtain a new URL. Optional notifications are described below.
 
+## Facility image optimization
+
+The facility_image collection keeps the original and generates an optimized WebP conversion at width 1200 and quality 80, synchronously on upload, matching Event and Announcement. FacilityBaseResource returns the optimized URL for website/admin/mobile consumers, preserving 15-minute signed S3 URLs. Existing media without the conversion falls back to its original URL.
+
+After deployment, generate missing conversions for existing Facility uploads using the registered morph alias (facility):
+
+```sh
+php artisan media-library:regenerate facility --only=optimized --only-missing --force
+```
+
+Run this once in each intended environment using Cloud's Commands feature. It processes stored Facility media and writes conversion files; no schema migration or frontend changes are required. Review command output for conversion errors.
+
 ## Architecture and verification
 
 Facility mutations use constructor-injected actions. Store and Update have separate requests, DTOs, controllers and actions; shared profile DTO filtering and exception writing remain internal reusable code. Address preparation and validation belong to profile requests; DTOs only carry validated values. Publication uses `PATCH /api/facility/{facility}/publish` with an explicit `is_published` value. Exception creation and editing use distinct entry points while preserving the shared transactional schedule writer.

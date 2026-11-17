@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Exceptions\HouseholdMemberDeclarationException;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\HouseholdMemberDuplicateService;
 use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -71,6 +72,11 @@ class DeclareHouseholdMemberForAssistanceAction
 
             if ($hasPendingMember) {
                 throw HouseholdMemberDeclarationException::pendingMemberExists();
+            }
+
+            $duplicates = app(HouseholdMemberDuplicateService::class);
+            if ($duplicates->candidates($duplicates->identity($dto), $municipalId) !== []) {
+                throw new HouseholdMemberDeclarationException('This person may already have a household record. Please ask MSWD to review it before adding another record.');
             }
 
             $member = $this->storeMember->execute(
